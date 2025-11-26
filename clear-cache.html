@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyage du Cache</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        h1 { margin-bottom: 1rem; }
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 0.5rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            min-height: 100px;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Nettoyage du Cache</h1>
+        <p>Utilisez cette page pour nettoyer le cache et le Service Worker</p>
+
+        <div>
+            <button onclick="clearAll()">Tout Nettoyer</button>
+            <button onclick="clearServiceWorker()">Service Worker</button>
+            <button onclick="clearLocalStorage()">LocalStorage</button>
+            <button onclick="clearCacheStorage()">Cache Storage</button>
+        </div>
+
+        <div class="status" id="status">
+            <p class="info">Prêt à nettoyer...</p>
+        </div>
+
+        <button onclick="goHome()" style="background: #10b981; color: white; margin-top: 1rem;">
+            ← Retour à l'accueil
+        </button>
+    </div>
+
+    <script>
+        const status = document.getElementById('status');
+
+        function log(message, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = message;
+            status.appendChild(p);
+            console.log(message);
+        }
+
+        function clearStatus() {
+            status.innerHTML = '';
+        }
+
+        async function clearServiceWorker() {
+            clearStatus();
+            log('🔄 Désinstallation du Service Worker...', 'info');
+
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+
+                if (registrations.length === 0) {
+                    log('✓ Aucun Service Worker actif', 'success');
+                    return;
+                }
+
+                for (let registration of registrations) {
+                    await registration.unregister();
+                    log(`✓ Service Worker désinstallé: ${registration.scope}`, 'success');
+                }
+
+                log('✓ Tous les Service Workers ont été désinstallés', 'success');
+            } catch (error) {
+                log(`✗ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearLocalStorage() {
+            clearStatus();
+            log('🗑️ Nettoyage du LocalStorage...', 'info');
+
+            try {
+                const keys = Object.keys(localStorage);
+                localStorage.clear();
+                log(`✓ ${keys.length} élément(s) supprimé(s)`, 'success');
+                log('Clés supprimées: ' + keys.join(', '), 'info');
+            } catch (error) {
+                log(`✗ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearCacheStorage() {
+            clearStatus();
+            log('🗄️ Nettoyage du Cache Storage...', 'info');
+
+            try {
+                const cacheNames = await caches.keys();
+
+                if (cacheNames.length === 0) {
+                    log('✓ Aucun cache trouvé', 'success');
+                    return;
+                }
+
+                for (let cacheName of cacheNames) {
+                    await caches.delete(cacheName);
+                    log(`✓ Cache supprimé: ${cacheName}`, 'success');
+                }
+
+                log(`✓ ${cacheNames.length} cache(s) supprimé(s)`, 'success');
+            } catch (error) {
+                log(`✗ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearAll() {
+            clearStatus();
+            log('🚀 Nettoyage complet en cours...', 'info');
+            log('─'.repeat(50), 'info');
+
+            await clearServiceWorker();
+            log('─'.repeat(50), 'info');
+
+            await clearLocalStorage();
+            log('─'.repeat(50), 'info');
+
+            await clearCacheStorage();
+            log('─'.repeat(50), 'info');
+
+            log('✓ NETTOYAGE TERMINÉ !', 'success');
+            log('Rechargement dans 2 secondes...', 'info');
+
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        // Afficher les informations au chargement
+        window.addEventListener('load', async () => {
+            clearStatus();
+            log('📊 État actuel:', 'info');
+
+            // Service Workers
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            log(`- Service Workers: ${registrations.length} actif(s)`, 'info');
+
+            // LocalStorage
+            const lsKeys = Object.keys(localStorage);
+            log(`- LocalStorage: ${lsKeys.length} clé(s)`, 'info');
+
+            // Cache Storage
+            const cacheNames = await caches.keys();
+            log(`- Cache Storage: ${cacheNames.length} cache(s)`, 'info');
+
+            log('─'.repeat(50), 'info');
+            log('Prêt à nettoyer !', 'success');
+        });
+    </script>
+</body>
+</html>

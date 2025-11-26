@@ -1,0 +1,256 @@
+# ============================================
+# Docker Compose - PRODUCTION
+# Application de gestion des terrains de tir à l'arc
+# ============================================
+# IMPORTANT: Utilisez ce fichier pour le déploiement en production
+# Commande: docker-compose -f docker-compose.prod.yml up -d
+# ============================================
+
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: tirallarc-db-prod
+    environment:
+      POSTGRES_DB: ${DB_NAME:-terrain_tir_arc}
+      POSTGRES_USER: ${DB_USER:-tir_arc_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}  # OBLIGATOIRE depuis .env.production
+    ports:
+      - "127.0.0.1:5432:5432"  # Bind sur localhost uniquement pour sécurité
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-tir_arc_user} -d ${DB_NAME:-terrain_tir_arc}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - tirallarc-network-prod
+    restart: unless-stopped
+    # Limites de ressources
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    # Sécurité
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # PostgreSQL a besoin d'écriture
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+
+  # Application (Backend + Frontend + Nginx)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    image: tirallarc-app:${APP_VERSION:-latest}
+    container_name: tirallarc-app-prod
+    ports:
+      - "80:80"
+      - "443:443"  # Pour HTTPS (géré par Coolify ou reverse proxy)
+    environment:
+      # Node.js
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
+
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-terrain_tir_arc}
+      DB_USER: ${DB_USER:-tir_arc_user}
+      DB_PASSWORD: ${DB_PASSWORD}  # OBLIGATOIRE depuis .env.production
+
+      # Sécurité (OBLIGATOIRE - générés via generate-secrets.js)
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+
+      # CORS - MODIFIER avec votre domaine
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://votre-domaine.com}
+
+      # Logs
+      LOG_LEVEL: ${LOG_LEVEL:-warn}
+
+      # Rate limiting
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+
+      # Email SMTP (Optionnel - configurable via UI admin)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    volumes:
+      # Volumes pour les données persistantes uniquement
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+
+      # PAS de volumes pour le code source en production
+      # Le code est copié dans l'image Docker au build
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - tirallarc-network-prod
+    restart: unless-stopped
+    # Limites de ressources
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # Sécurité
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE  # Pour bind port 80/443
+    read_only: false  # Nginx et Node nécessitent certains write
+    tmpfs:
+      - /tmp
+      - /var/run
+      - /var/cache/nginx
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Service de backup PostgreSQL (optionnel mais recommandé)
+  backup:
+    image: postgres:15-alpine
+    container_name: tirallarc-backup-prod
+    environment:
+      POSTGRES_DB: ${DB_NAME:-terrain_tir_arc}
+      POSTGRES_USER: ${DB_USER:-tir_arc_user}
+      PGPASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./backups:/backups
+    networks:
+      - tirallarc-network-prod
+    command: >
+      sh -c '
+      echo "Service de backup démarré - Backup quotidien à 3h00"
+      while true; do
+        # Attendre jusqu'à 3h00
+        CURRENT_HOUR=$$(date +%H)
+        CURRENT_MIN=$$(date +%M)
+        if [ "$$CURRENT_HOUR" = "03" ] && [ "$$CURRENT_MIN" = "00" ]; then
+          echo "Début du backup à $$(date)"
+          pg_dump -h postgres -U ${DB_USER:-tir_arc_user} ${DB_NAME:-terrain_tir_arc} > /backups/db_$$(date +%Y%m%d_%H%M%S).sql
+          echo "Backup terminé à $$(date)"
+          # Supprimer les backups de plus de 30 jours
+          find /backups -name "db_*.sql" -type f -mtime +30 -delete
+          # Attendre 1 heure pour éviter plusieurs backups
+          sleep 3600
+        else
+          # Vérifier toutes les minutes
+          sleep 60
+        fi
+      done
+      '
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+volumes:
+  postgres_data_prod:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${DATA_DIR:-./postgres-data}
+      o: bind
+
+networks:
+  tirallarc-network-prod:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-tirallarc-prod
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================
+# NOTES DE DÉPLOIEMENT PRODUCTION
+# ============================================
+#
+# 1. AVANT LE PREMIER DÉPLOIEMENT:
+#    - Générez les secrets: node generate-secrets.js create
+#    - Créez le fichier .env.production avec les secrets générés
+#    - Modifiez ALLOWED_ORIGINS avec votre domaine
+#    - Configurez les variables SMTP si nécessaire
+#
+# 2. DÉPLOIEMENT:
+#    docker-compose -f docker-compose.prod.yml up -d --build
+#
+# 3. VÉRIFICATION:
+#    docker-compose -f docker-compose.prod.yml ps
+#    docker-compose -f docker-compose.prod.yml logs -f app
+#    curl http://localhost/health
+#
+# 4. BACKUPS:
+#    - Backups automatiques quotidiens à 3h00 dans ./backups/
+#    - Rétention: 30 jours
+#    - Backup manuel: docker-compose -f docker-compose.prod.yml exec backup pg_dump -h postgres -U tir_arc_user terrain_tir_arc > backup.sql
+#
+# 5. MONITORING:
+#    - Health checks actifs sur app et postgres
+#    - Logs limités à 10MB x 3 fichiers
+#    - Métriques: http://localhost/metrics
+#
+# 6. SÉCURITÉ:
+#    - PostgreSQL accessible uniquement en localhost
+#    - Limites de ressources CPU/RAM
+#    - Capabilities Linux minimales
+#    - Secrets dans .env.production (non committé)
+#    - HTTPS géré par Coolify ou reverse proxy externe
+#
+# 7. COOLIFY:
+#    - Coolify gère automatiquement HTTPS avec Let's Encrypt
+#    - Utilisez ce docker-compose.prod.yml comme configuration
+#    - Variables d'environnement à définir dans l'interface Coolify
+#    - Le reverse proxy Coolify se charge du SSL/TLS
+#
+# 8. MISE À JOUR:
+#    docker-compose -f docker-compose.prod.yml pull
+#    docker-compose -f docker-compose.prod.yml up -d --build
+#    docker-compose -f docker-compose.prod.yml restart app
+#
+# 9. ROLLBACK:
+#    docker-compose -f docker-compose.prod.yml down
+#    docker-compose -f docker-compose.prod.yml up -d --no-build
+#
+# ============================================

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signaler un Incident - Terrain Tir Arc</title>
+    <link rel="icon" type="image/png" href="images/icon-192.png">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2E7D32">
+    <style>
+        /* Adaptations mobiles pour incident.html */
+        @media (max-width: 768px) {
+            /* Réduction de la taille des caractères de 10% (90% de la taille normale) */
+            body, .container {
+                font-size: 90% !important;
+            }
+
+            /* Interlignes normales (100% - pas de réduction) */
+            body, .container, p, div, label, input, textarea, select, button {
+                line-height: normal !important;
+            }
+
+            /* Titres - 10% plus petits */
+            h1 {
+                font-size: 1.8rem !important; /* 90% de 2rem */
+            }
+
+            h2 {
+                font-size: 1.62rem !important; /* 90% de 1.8rem */
+            }
+
+            h3 {
+                font-size: 1.44rem !important; /* 90% de 1.6rem */
+            }
+
+            /* Header */
+            .header h1 {
+                font-size: 1.62rem !important; /* 90% */
+            }
+
+            .header p {
+                font-size: 0.99rem !important; /* 90% de 1.1rem */
+            }
+
+            /* Formulaire */
+            .form-card h2 {
+                font-size: 1.62rem !important; /* 90% */
+            }
+
+            .form-description {
+                font-size: 0.9rem !important; /* 90% de 1rem */
+            }
+
+            .form-group label {
+                font-size: 0.9rem !important; /* 90% de 1rem */
+            }
+
+            .form-control {
+                font-size: 0.9rem !important; /* 90% */
+                padding: 8px !important;
+            }
+
+            .form-text, small {
+                font-size: 0.72rem !important; /* 90% de 0.8rem */
+            }
+
+            /* Boutons */
+            .btn {
+                font-size: 0.9rem !important; /* 90% de 1rem */
+                padding: 10px 16px !important;
+            }
+
+            /* Footer */
+            .footer {
+                font-size: 0.72rem !important; /* 90% de 0.8rem */
+            }
+
+            /* Alert messages */
+            .alert {
+                font-size: 0.9rem !important; /* 90% */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1>🎯 Signaler un Incident</h1>
+                <p>Terrain de Tir à l'Arc</p>
+            </div>
+            <div class="header-actions">
+                <button id="backBtn" class="btn btn-secondary">
+                    ← Retour
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="form-card">
+                <h2>📢 Formulaire de Signalement</h2>
+                <p class="form-description">
+                    Signalez tout incident ou problème rencontré sur les terrains.
+                    Votre signalement sera transmis immédiatement au responsable.
+                </p>
+
+                <form id="incidentForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="typeIncident">Type d'incident *</label>
+                        <select id="typeIncident" name="type_incident" class="form-control" required>
+                            <option value="">Sélectionnez le type</option>
+                            <option value="Équipement endommagé">Équipement endommagé</option>
+                            <option value="Accident">Accident</option>
+                            <option value="Comportement dangereux">Comportement dangereux</option>
+                            <option value="Problème matériel">Problème matériel</option>
+                            <option value="Infrastructure">Infrastructure (terrain, éclairage...)</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="terrain">Terrain concerné *</label>
+                        <select id="terrain" name="terrain" class="form-control" required>
+                            <option value="">Sélectionnez le terrain</option>
+                            <option value="interieur">🏟️ Terrain Intérieur</option>
+                            <option value="exterieur">🌳 Terrain Extérieur</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description détaillée *</label>
+                        <textarea id="description" name="description" class="form-control"
+                                  rows="6" placeholder="Décrivez l'incident en détail..." required></textarea>
+                        <small class="form-text">Soyez aussi précis que possible (lieu exact, circonstances, personnes impliquées...)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="photo">Photo (optionnel)</label>
+                        <input type="file" id="photo" name="photo" class="form-control"
+                               accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                        <small class="form-text">Formats acceptés: JPG, PNG, GIF, WebP (max 10 MB)</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            📢 Signaler l'Incident
+                        </button>
+                        <button type="button" id="cancelBtn" class="btn btn-secondary">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+
+                <div id="formMessage" class="alert hidden"></div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2025 Club Istres Sports Tir à l'Arc</p>
+        </footer>
+    </div>
+
+    <!-- Logger doit être chargé en premier pour être disponible dans tous les autres scripts -->
+    <script src="js/logger.js"></script>
+    <script src="js/error-handler.js"></script>
+    <script src="js/validators.js"></script>
+    <script src="js/database.js"></script>
+    <script>
+        // Script pour la page incident
+        async function init() {
+            // Event listeners
+            document.getElementById('backBtn').addEventListener('click', () => {
+                window.location.href = 'declaration.html';
+            });
+
+            document.getElementById('cancelBtn').addEventListener('click', () => {
+                if (confirm('Voulez-vous vraiment annuler ?')) {
+                    window.location.href = 'declaration.html';
+                }
+            });
+
+            document.getElementById('incidentForm').addEventListener('submit', handleSubmit);
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '📤 Envoi en cours...';
+
+            try {
+                const formData = new FormData(e.target);
+
+                // Tenter d'envoyer via l'API
+                if (DatabaseManager.useAPI) {
+                    // Utiliser /api car Nginx fait le proxy vers le backend
+                    const response = await fetch('/api/incidents/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Erreur serveur');
+                    }
+
+                    const data = await response.json();
+                    showMessage('success', '✅ Incident signalé avec succès ! Le responsable a été notifié.');
+                    e.target.reset();
+
+                } else {
+                    // Fallback localStorage (sans photo)
+                    const incident = {
+                        type_incident: formData.get('type_incident'),
+                        description: formData.get('description'),
+                        terrain: formData.get('terrain'),
+                        photo_path: formData.get('photo')?.name || null
+                    };
+
+                    await DatabaseManager.createIncident(incident);
+                    showMessage('success', '✅ Incident signalé (mode hors ligne). Synchronisation à la reconnexion.');
+                    e.target.reset();
+                }
+
+                // Retour après 2 secondes
+                setTimeout(() => {
+                    window.location.href = 'declaration.html';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Erreur signalement incident:', error);
+                showMessage('error', `❌ Erreur: ${error.message}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        }
+
+        function showMessage(type, message) {
+            const messageDiv = document.getElementById('formMessage');
+            messageDiv.textContent = message;
+            messageDiv.className = `alert ${type === 'success' ? 'alert-success' : 'alert-danger'}`;
+            messageDiv.classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialiser au chargement
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

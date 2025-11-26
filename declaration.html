@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Déclaration de Présence - Tir à l'Arc</title>
+    <link rel="icon" type="image/png" href="images/icon-192.png">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2E7D32">
+
+    <style>
+        /* Adaptations mobiles pour declaration.html */
+        @media (max-width: 768px) {
+            /* Réduction de la taille des caractères de 10% (90% de la taille normale) */
+            body, .container {
+                font-size: 90% !important;
+            }
+
+            /* Interlignes normales (100% - pas de réduction) */
+            body, .container, p, div, label, input, textarea, select, button {
+                line-height: normal !important;
+            }
+
+            /* Titres - 10% plus petits */
+            h1 {
+                font-size: 1.8rem !important; /* 90% de 2rem */
+            }
+
+            h2 {
+                font-size: 1.62rem !important; /* 90% de 1.8rem */
+            }
+
+            h3 {
+                font-size: 1.44rem !important; /* 90% de 1.6rem */
+            }
+
+            /* Header */
+            .header h1 {
+                font-size: 1.62rem !important;
+            }
+
+            .header p {
+                font-size: 0.99rem !important;
+            }
+
+            /* Terrain cards */
+            .terrain-card h3 {
+                font-size: 1.44rem !important;
+            }
+
+            .terrain-status {
+                font-size: 0.9rem !important;
+            }
+
+            /* Formulaire */
+            .form-container h2 {
+                font-size: 1.62rem !important;
+            }
+
+            .form-group label {
+                font-size: 0.9rem !important;
+            }
+
+            .form-control {
+                font-size: 0.9rem !important;
+                padding: 8px !important;
+            }
+
+            .form-text, small {
+                font-size: 0.72rem !important;
+            }
+
+            /* Session active */
+            .session-card h2 {
+                font-size: 1.62rem !important;
+            }
+
+            .detail-item {
+                font-size: 0.9rem !important;
+            }
+
+            /* Utility cards */
+            .utility-card h3 {
+                font-size: 1.44rem !important;
+            }
+
+            .utility-card p {
+                font-size: 0.9rem !important;
+            }
+
+            /* Boutons */
+            .btn {
+                font-size: 0.9rem !important;
+                padding: 10px 16px !important;
+            }
+
+            /* Footer */
+            .footer {
+                font-size: 0.72rem !important;
+            }
+
+            /* Alert messages */
+            .alert {
+                font-size: 0.9rem !important;
+            }
+
+            /* Modal */
+            .modal h2 {
+                font-size: 1.62rem !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1>🎯 Déclaration de Présence</h1>
+                <p>Terrains de Tir à l'Arc</p>
+            </div>
+            <div class="header-actions">
+                <button id="homeBtn" class="btn btn-secondary">
+                    ← Accueil
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Section de sélection du terrain -->
+            <section class="terrain-selection">
+                <h2>Sélectionnez votre terrain</h2>
+                <div class="terrain-cards">
+                    <div class="terrain-card" data-terrain="interieur">
+                        <div class="icon">🏟️</div>
+                        <h3>Terrain Intérieur</h3>
+                        <p class="terrain-status">
+                            <span id="statusInterieur">0 tireur(s)</span> présent(s)
+                        </p>
+                    </div>
+                    <div class="terrain-card" data-terrain="exterieur">
+                        <div class="icon">🌳</div>
+                        <h3>Terrain Extérieur</h3>
+                        <p class="terrain-status">
+                            <span id="statusExterieur">0 tireur(s)</span> présent(s)
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Formulaire de déclaration -->
+            <section class="declaration-form">
+                <div class="form-container">
+                    <h2>Vos Informations</h2>
+                    <form id="declarationForm">
+                        <input type="hidden" id="terrainSelected" name="terrain">
+
+                        <div class="form-group">
+                            <label for="nom">Nom *</label>
+                            <input type="text" id="nom" name="nom" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="prenom">Prénom *</label>
+                            <input type="text" id="prenom" name="prenom" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="typeTireur">Type de tireur *</label>
+                            <select id="typeTireur" name="type_tireur" class="form-control" required>
+                                <option value="">Sélectionnez votre statut</option>
+                                <option value="club">Membre du club</option>
+                                <option value="autre_club">Membre d'un autre club</option>
+                                <option value="service_sports">Service des sports de la mairie</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nombreTireurs">Nombre total de tireurs présents *</label>
+                            <input type="number" id="nombreTireurs" name="nombre_tireurs"
+                                   class="form-control" min="1" max="20" required>
+                            <small class="form-text">Incluez-vous dans le décompte</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                ✅ Valider ma présence
+                            </button>
+                            <button type="button" id="cancelBtn" class="btn btn-secondary">
+                                ❌ Annuler
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Section session active (cachée au début) -->
+            <section id="activeSession" class="active-session hidden">
+                <div class="session-card">
+                    <div class="session-header">
+                        <h2>🎯 Session Active</h2>
+                        <div class="session-status">
+                            <span class="status-indicator active"></span>
+                            En cours
+                        </div>
+                    </div>
+
+                    <div class="session-details">
+                        <div class="detail-item">
+                            <strong>Tireur:</strong>
+                            <span id="sessionNom"></span> <span id="sessionPrenom"></span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Statut:</strong>
+                            <span id="sessionType"></span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Terrain:</strong>
+                            <span id="sessionTerrain"></span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Nombre de tireurs:</strong>
+                            <span id="sessionNombre"></span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Début de session:</strong>
+                            <span id="sessionDebut"></span>
+                        </div>
+                    </div>
+
+                    <div class="session-actions">
+                        <button id="endSessionBtn" class="btn btn-danger">
+                            🏁 Terminer la session
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section utilitaires -->
+            <section class="utility-section">
+                <h2>Utilitaires</h2>
+                <div class="utility-grid">
+                    <!-- Signalement d'incident -->
+                    <div class="utility-card">
+                        <div class="utility-icon">⚠️</div>
+                        <h3>Signaler un incident</h3>
+                        <p>Problème sur le terrain ? Signalez-le rapidement</p>
+                        <button id="reportIncidentBtn" class="btn btn-warning">
+                            📝 Signaler
+                        </button>
+                    </div>
+
+                    <!-- Appel d'urgence -->
+                    <div class="utility-card">
+                        <div class="utility-icon">📞</div>
+                        <h3>Contacter le responsable</h3>
+                        <p>Besoin d'aide ? Appelez directement</p>
+                        <button id="callResponsibleBtn" class="btn btn-accent">
+                            📞 Appeler
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Modal de signalement d'incident -->
+        <div id="incidentModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>⚠️ Signalement d'Incident</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+
+                <form id="incidentForm">
+                    <div class="form-group">
+                        <label for="typeIncident">Type d'incident *</label>
+                        <select id="typeIncident" name="type_incident" class="form-control" required>
+                            <option value="">Sélectionnez le type</option>
+                            <option value="Équipement défaillant">Équipement défaillant</option>
+                            <option value="Problème de sécurité">Problème de sécurité</option>
+                            <option value="Dégradation">Dégradation</option>
+                            <option value="Accident">Accident</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descriptionIncident">Description détaillée *</label>
+                        <textarea id="descriptionIncident" name="description"
+                                  class="form-control" rows="4" required
+                                  placeholder="Décrivez l'incident de manière précise..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="photoIncident">Photo (optionnel)</label>
+                        <div class="photo-input-container">
+                            <div class="photo-buttons">
+                                <button type="button" id="cameraBtn" class="btn btn-sm btn-primary">
+                                    📷 Prendre photo
+                                </button>
+                                <button type="button" id="galleryBtn" class="btn btn-sm btn-secondary">
+                                    🖼️ Galerie
+                                </button>
+                            </div>
+                            <input type="file" id="photoIncident" name="photo"
+                                   class="form-control photo-input hidden" accept="image/*">
+                            <div id="photoPreview" class="photo-preview hidden">
+                                <img id="previewImg" src="" alt="Aperçu photo" class="preview-image">
+                                <button type="button" id="removePhoto" class="btn btn-sm btn-danger remove-photo">
+                                    ❌ Supprimer
+                                </button>
+                            </div>
+                        </div>
+                        <small class="form-text">Une photo peut aider à résoudre le problème plus rapidement</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-danger">
+                            📤 Envoyer le signalement
+                        </button>
+                        <button type="button" class="btn btn-secondary modal-close">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2025 Club Istres Sports Tir à l'Arc</p>
+        </footer>
+    </div>
+
+    <!-- Modal de confirmation fin de session -->
+    <div id="endSessionModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🏁 Terminer la session</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir terminer votre session de tir ?</p>
+            </div>
+
+            <div class="modal-actions">
+                <button id="confirmEndSession" class="btn btn-danger">
+                    🏁 Oui, terminer la session
+                </button>
+                <button class="btn btn-secondary modal-close">
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay modal -->
+    <div id="modalOverlay" class="modal-overlay hidden"></div>
+
+    <!-- Logger doit être chargé en premier pour être disponible dans tous les autres scripts -->
+    <script src="js/logger.js"></script>
+    <script src="js/error-handler.js"></script>
+    <script src="js/validators.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/declaration.js"></script>
+</body>
+</html>

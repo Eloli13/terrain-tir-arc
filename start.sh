@@ -1,0 +1,39 @@
+#!/bin/sh
+
+echo "=========================================="
+echo "Démarrage de l'application TirArc"
+echo "=========================================="
+
+# Vérifier les variables d'environnement critiques
+if [ -z "$DB_HOST" ]; then
+    echo "WARNING: DB_HOST n'est pas défini"
+fi
+
+if [ -z "$JWT_SECRET" ]; then
+    echo "WARNING: JWT_SECRET n'est pas défini"
+fi
+
+echo "Environment: ${NODE_ENV:-production}"
+echo "Port Backend: ${PORT:-3000}"
+echo "DB Host: ${DB_HOST:-non défini}"
+echo ""
+
+# Démarrer Nginx en arrière-plan
+echo "Démarrage de Nginx..."
+nginx -t
+if [ $? -eq 0 ]; then
+    nginx
+    echo "✓ Nginx démarré sur le port 80"
+else
+    echo "✗ Erreur de configuration Nginx"
+    exit 1
+fi
+
+# Attendre que Nginx soit prêt
+sleep 2
+
+# Démarrer l'application Node.js
+echo ""
+echo "Démarrage du backend Node.js..."
+cd /app
+exec su-exec nodejs node server.js

@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Tir à l'Arc</title>
+    <link rel="icon" type="image/png" href="../images/icon-192.png">
+    <link rel="apple-touch-icon" href="../images/icon-192.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <meta name="theme-color" content="#2E7D32">
+
+    <style>
+        /* Adaptations mobiles pour admin/index.html */
+        @media (max-width: 768px) {
+            /* Réduction de la taille des caractères de 10% (90% de la taille normale) */
+            body, .container {
+                font-size: 90% !important;
+            }
+
+            /* Interlignes normales (100% - pas de réduction) */
+            body, .container, p, div, label, input, textarea, select, button, td, th {
+                line-height: normal !important;
+            }
+
+            /* Titres - 10% plus petits */
+            h1 {
+                font-size: 1.8rem !important; /* 90% de 2rem */
+            }
+
+            h2 {
+                font-size: 1.62rem !important; /* 90% de 1.8rem */
+            }
+
+            h3 {
+                font-size: 1.44rem !important; /* 90% de 1.6rem */
+            }
+
+            h4 {
+                font-size: 1.26rem !important; /* 90% de 1.4rem */
+            }
+
+            /* Header */
+            .header h1 {
+                font-size: 1.62rem !important;
+            }
+
+            .header p {
+                font-size: 0.99rem !important;
+            }
+
+            /* Navigation */
+            .nav-tab {
+                font-size: 0.9rem !important;
+            }
+
+            /* Stats cards */
+            .stat-card h4 {
+                font-size: 0.9rem !important;
+            }
+
+            .stat-value {
+                font-size: 1.35rem !important;
+            }
+
+            /* Formulaires */
+            .form-group label {
+                font-size: 0.9rem !important;
+            }
+
+            .form-control {
+                font-size: 0.9rem !important;
+                padding: 8px !important;
+            }
+
+            .form-text, small {
+                font-size: 0.72rem !important;
+            }
+
+            /* Tableaux */
+            .data-table {
+                font-size: 0.81rem !important; /* 90% de 0.9rem */
+            }
+
+            .data-table th {
+                font-size: 0.81rem !important;
+            }
+
+            .data-table td {
+                font-size: 0.81rem !important;
+            }
+
+            /* Incidents */
+            .incident-card {
+                font-size: 0.9rem !important;
+            }
+
+            /* Boutons */
+            .btn {
+                font-size: 0.9rem !important;
+                padding: 10px 16px !important;
+            }
+
+            .btn-sm {
+                font-size: 0.72rem !important;
+                padding: 6px 10px !important;
+            }
+
+            /* Footer */
+            .footer {
+                font-size: 0.72rem !important;
+            }
+
+            /* Alert messages */
+            .alert {
+                font-size: 0.9rem !important;
+            }
+
+            /* Modal */
+            .modal h2 {
+                font-size: 1.62rem !important;
+            }
+        }
+
+        /* Styles pour la configuration email */
+        .email-status {
+            padding: 15px;
+            border-radius: 8px;
+            background: #f5f5f5;
+            margin: 15px 0;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-icon {
+            font-size: 20px;
+        }
+
+        .status-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333 !important;
+        }
+
+        .status-indicator.status-not-configured .status-icon {
+            color: #666;
+        }
+
+        .status-indicator.status-configured .status-icon {
+            color: #ff9800;
+        }
+
+        .status-indicator.status-tested .status-icon {
+            color: #4caf50;
+        }
+
+        .status-indicator.status-error .status-icon {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1>🎯 Administration</h1>
+                <p>Gestion des Terrains de Tir à l'Arc</p>
+            </div>
+            <div class="header-actions">
+                <button id="logoutBtn" class="btn btn-secondary btn-admin">
+                    🚪
+                </button>
+            </div>
+        </header>
+
+        <nav class="admin-nav">
+            <!-- Navigation desktop (affichage normal) -->
+            <div class="nav-desktop">
+                <a href="#dashboard" class="nav-tab active" data-section="dashboard">
+                    📊 Tableau de bord
+                </a>
+                <a href="#configuration" class="nav-tab" data-section="configuration">
+                    ⚙️ Configuration
+                </a>
+                <a href="#frequentation" class="nav-tab" data-section="frequentation">
+                    📈 Fréquentation
+                </a>
+                <a href="#incidents" class="nav-tab" data-section="incidents">
+                    ⚠️ Incidents
+                </a>
+                <a href="#qrcode" class="nav-tab" data-section="qrcode">
+                    📱 QR Code
+                </a>
+            </div>
+
+            <!-- Navigation mobile (dropdown) -->
+            <div class="nav-mobile">
+                <button class="nav-toggle" id="navToggle">
+                    📊 Tableau de bord ▼
+                </button>
+                <div class="nav-dropdown" id="navDropdown">
+                    <a href="#dashboard" class="nav-tab active" data-section="dashboard">
+                        📊 Tableau de bord
+                    </a>
+                    <a href="#configuration" class="nav-tab" data-section="configuration">
+                        ⚙️ Configuration
+                    </a>
+                    <a href="#frequentation" class="nav-tab" data-section="frequentation">
+                        📈 Fréquentation
+                    </a>
+                    <a href="#incidents" class="nav-tab" data-section="incidents">
+                        ⚠️ Incidents
+                    </a>
+                    <a href="#qrcode" class="nav-tab" data-section="qrcode">
+                        📱 QR Code
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <!-- Section Tableau de bord -->
+            <section id="dashboard" class="admin-section active">
+                <h2>📊 Tableau de bord</h2>
+
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <h4>Tireurs Actifs</h4>
+                            <div class="stat-value">
+                                <span id="activeShooters">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">🏟️</div>
+                        <div class="stat-info">
+                            <h4>Terrain Intérieur</h4>
+                            <div class="stat-value">
+                                <span id="indoorCount">0</span> tireur(s)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">🌳</div>
+                        <div class="stat-info">
+                            <h4>Terrain Extérieur</h4>
+                            <div class="stat-value">
+                                <span id="outdoorCount">0</span> tireur(s)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-info">
+                            <h4>Incidents Ouverts</h4>
+                            <div class="stat-value">
+                                <span id="openIncidents">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3>Activité Récente</h3>
+                    <div id="recentSessions" class="activity-list">
+                        <!-- Sessions récentes chargées dynamiquement -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Configuration -->
+            <section id="configuration" class="admin-section">
+                <h2>⚙️ Configuration</h2>
+
+                <div class="config-form">
+                    <h3>Paramètres de Contact</h3>
+                    <p class="form-text" style="margin-bottom: 15px;">
+                        Numéro de téléphone du responsable affiché dans l'application pour les urgences.
+                    </p>
+                    <form id="configForm">
+                        <div class="form-group">
+                            <label for="phoneNumber">Téléphone du responsable</label>
+                            <input type="tel" id="phoneNumber" name="telephone_responsable"
+                                   class="form-control" placeholder="0123456789" required>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                💾 Sauvegarder
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Configuration Email -->
+                <div class="config-form">
+                    <h3>📧 Notifications par Email</h3>
+                    <p class="form-text" style="margin-bottom: 15px;">
+                        Configurez l'envoi automatique d'emails pour les notifications d'incidents.
+                    </p>
+
+                    <div id="emailConfigStatus" class="email-status">
+                        <div class="status-indicator">
+                            <span class="status-icon">⚫</span>
+                            <span class="status-text">Configuration non chargée...</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="openEmailConfigBtn" class="btn btn-primary">
+                            ⚙️ Configurer l'envoi d'emails
+                        </button>
+                    </div>
+                </div>
+
+                <div class="config-form">
+                    <h3>Sécurité Administration</h3>
+                    <form id="passwordChangeForm">
+                        <div class="form-group">
+                            <label for="currentPassword">Mot de passe actuel *</label>
+                            <input type="password" id="currentPassword" name="current_password"
+                                   class="form-control" placeholder="Mot de passe actuel" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPassword">Nouveau mot de passe *</label>
+                            <input type="password" id="newPassword" name="new_password"
+                                   class="form-control" placeholder="Nouveau mot de passe" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirmer le nouveau mot de passe *</label>
+                            <input type="password" id="confirmPassword" name="confirm_password"
+                                   class="form-control" placeholder="Confirmer le mot de passe" required>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                🔐 Changer le mot de passe
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="passwordChangeMessage" class="alert hidden">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Fréquentation -->
+            <section id="frequentation" class="admin-section">
+                <h2>📈 Historique de Fréquentation</h2>
+
+                <div class="filters-section">
+                    <h3>Filtres</h3>
+                    <div class="filters-form">
+                        <div class="filter-group">
+                            <label for="periodFilter">Période</label>
+                            <select id="periodFilter" class="form-control">
+                                <option value="week">Cette semaine</option>
+                                <option value="month" selected>Ce mois</option>
+                                <option value="year">Cette année</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="terrainFilter">Terrain</label>
+                            <select id="terrainFilter" class="form-control">
+                                <option value="">Tous les terrains</option>
+                                <option value="interieur">Intérieur</option>
+                                <option value="exterieur">Extérieur</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="typeFilter">Type de tireur</label>
+                            <select id="typeFilter" class="form-control">
+                                <option value="">Tous les types</option>
+                                <option value="club">Membres du club</option>
+                                <option value="autre_club">Autres clubs</option>
+                                <option value="service_sports">Service sports</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button id="applyFilters" class="btn btn-primary">
+                                🔍 Appliquer
+                            </button>
+                            <button id="resetFilters" class="btn btn-secondary">
+                                🔄 Réinitialiser
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <h3>Graphique de Fréquentation</h3>
+                    <div class="chart-container">
+                        <canvas id="frequentationChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="data-section">
+                    <div class="section-header">
+                        <h3>Données Détaillées</h3>
+                        <div class="export-buttons">
+                            <button id="exportXLS" class="btn btn-secondary">
+                                📊 Export XLS
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table id="frequentationTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date/Heure</th>
+                                    <th>Nom</th>
+                                    <th>Prénom</th>
+                                    <th>Type</th>
+                                    <th>Terrain</th>
+                                    <th>Nb Tireurs</th>
+                                    <th>Durée</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Données chargées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Incidents -->
+            <section id="incidents" class="admin-section">
+                <h2>⚠️ Gestion des Incidents</h2>
+
+                <div class="incidents-filters">
+                    <div class="filters-row">
+                        <div class="filter-group">
+                            <label for="statutFilter">Statut</label>
+                            <select id="statutFilter" class="form-control">
+                                <option value="">Tous les statuts</option>
+                                <option value="en_attente">En attente</option>
+                                <option value="en_cours">En cours</option>
+                                <option value="resolu">Résolu</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="terrainIncidentFilter">Terrain</label>
+                            <select id="terrainIncidentFilter" class="form-control">
+                                <option value="">Tous les terrains</option>
+                                <option value="interieur">Intérieur</option>
+                                <option value="exterieur">Extérieur</option>
+                            </select>
+                        </div>
+
+                        <button id="filterIncidents" class="btn btn-primary filter-btn">
+                            🔍 Filtrer
+                        </button>
+                    </div>
+
+                    <div class="actions-row">
+                        <div class="selection-controls">
+                            <button id="selectAllIncidents" class="btn btn-sm btn-secondary">
+                                ☑️ Tout sélectionner
+                            </button>
+                            <button id="selectNoneIncidents" class="btn btn-sm btn-secondary">
+                                ☐ Tout désélectionner
+                            </button>
+                        </div>
+                        <div class="selected-actions">
+                            <button id="exportSelectedPDF" class="btn btn-warning" disabled>
+                                📄 Export PDF sélection
+                            </button>
+                            <button id="deleteSelectedIncidents" class="btn btn-danger" disabled>
+                                🗑️ Supprimer sélection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="incidentsList" class="incidents-list">
+                    <!-- Incidents chargés dynamiquement -->
+                </div>
+            </section>
+
+            <!-- Section QR Code -->
+            <section id="qrcode" class="admin-section">
+                <h2>📱 Génération QR Code</h2>
+
+                <div class="qrcode-section">
+                    <div class="qr-settings">
+                        <h3>Paramètres du QR Code</h3>
+                        <form id="qrForm">
+                            <div class="form-group">
+                                <label for="qrData">Données du QR Code</label>
+                                <input type="text" id="qrData" name="qr_data" class="form-control"
+                                       placeholder="URL ou données personnalisées" required>
+                                <small class="form-text">
+                                    L'URL de votre application ou des données personnalisées
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="qrSize">Taille (pixels)</label>
+                                <select id="qrSize" name="qr_size" class="form-control">
+                                    <option value="200">200x200</option>
+                                    <option value="300" selected>300x300</option>
+                                    <option value="400">400x400</option>
+                                    <option value="500">500x500</option>
+                                </select>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    🔄 Générer QR Code
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="qr-display">
+                        <h3>QR Code Généré</h3>
+                        <div id="qrCodeContainer" class="qr-container">
+                            <p>Cliquez sur "Générer QR Code" pour créer le code</p>
+                        </div>
+
+                        <div id="qrActions" class="qr-actions hidden">
+                            <button id="downloadQR" class="btn btn-secondary">
+                                💾 Télécharger PNG
+                            </button>
+                            <button id="printQR" class="btn btn-secondary">
+                                🖨️ Imprimer
+                            </button>
+                            <button id="exportPDF" class="btn btn-primary">
+                                📄 Exporter en PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2025 Club Istres Sports Tir à l'Arc</p>
+        </footer>
+    </div>
+
+    <!-- ============================================
+         WEBSOCKET NOTIFICATIONS HTML STRUCTURE
+         ============================================ -->
+
+    <!-- Container pour les notifications toast -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- Badge compteur de notifications -->
+    <div id="notificationBadge" class="notification-badge hidden pulse">
+        <span id="notificationCount">0</span>
+    </div>
+
+    <!-- Panneau latéral de notifications -->
+    <div id="notificationPanel" class="notification-panel">
+        <div class="notification-panel-header">
+            <h3>🔔 Notifications</h3>
+            <button id="closePanelBtn" class="notification-panel-close">&times;</button>
+        </div>
+
+        <div class="notification-panel-actions">
+            <button id="markAllReadBtn">✓ Tout marquer lu</button>
+            <button id="clearAllBtn">🗑️ Tout effacer</button>
+        </div>
+
+        <div id="notificationPanelList" class="notification-panel-list">
+            <!-- Notifications dynamiques -->
+            <div class="notification-panel-empty">
+                <div class="notification-panel-empty-icon">🔔</div>
+                <div class="notification-panel-empty-text">Aucune notification</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay pour fermer le panneau -->
+    <div id="notificationPanelOverlay" class="notification-panel-overlay"></div>
+
+    <!-- Son de notification (base64 inline pour éviter fichier externe) -->
+    <audio id="notificationSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZUQ4RV67o7qxbGApCmN/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8RWrDo7q1bGQpBl9/txm0hBSWC0PXXhzwIIG/C7+OVUA8=" type="audio/wav">
+    </audio>
+
+    <!-- Modal de modification d'incident -->
+    <div id="incidentModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Modifier l'Incident</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+
+            <form id="editIncidentForm">
+                <input type="hidden" id="incidentId">
+
+                <div class="form-group">
+                    <label for="editStatut">Statut *</label>
+                    <select id="editStatut" name="statut" class="form-control" required>
+                        <option value="en_attente">En attente</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="resolu">Résolu</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editTreatment">Notes de traitement (phase en cours)</label>
+                    <textarea id="editTreatment" name="treatment_notes"
+                              class="form-control" rows="4"
+                              placeholder="Actions en cours, investigations..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="editResolution">Notes de résolution (phase résolu)</label>
+                    <textarea id="editResolution" name="resolution_notes"
+                              class="form-control" rows="4"
+                              placeholder="Solution finale apportée..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        💾 Sauvegarder
+                    </button>
+                    <button type="button" class="btn btn-secondary modal-close">
+                        Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de confirmation de suppression -->
+    <div id="deleteConfirmModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>⚠️ Confirmation de suppression</h2>
+                <button id="deleteModalClose" class="modal-close">&times;</button>
+            </div>
+
+            <div style="padding: 20px;">
+                <p id="deleteConfirmMessage" style="font-size: 16px; margin-bottom: 20px;"></p>
+                <p style="color: #d32f2f; font-weight: bold;">
+                    ⚠️ Cette action est irréversible.
+                </p>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">
+                    🗑️ Supprimer
+                </button>
+                <button type="button" id="cancelDeleteBtn" class="btn btn-secondary">
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de configuration email Gmail -->
+    <div id="emailConfigModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>📧 Configuration Email Gmail</h2>
+                <button class="modal-close" id="closeEmailConfigModal">&times;</button>
+            </div>
+
+            <form id="emailConfigForm" style="padding: 20px;">
+                <!-- Guide intégré -->
+                <div class="info-box" style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
+                    <h4 style="margin: 0 0 10px 0; color: #1976D2;">ℹ️ Information importante</h4>
+                    <p style="margin: 5px 0; font-size: 14px; color: #333;">Pour utiliser Gmail, vous devez :</p>
+                    <ol style="margin: 10px 0; padding-left: 20px; font-size: 14px; color: #333;">
+                        <li>Activer l'authentification à 2 facteurs sur votre compte Google</li>
+                        <li>Créer un "mot de passe d'application" depuis les paramètres de sécurité</li>
+                        <li>Utiliser ce mot de passe (16 caractères) dans le formulaire ci-dessous</li>
+                    </ol>
+                    <button type="button" id="showGmailGuideBtn" class="btn btn-sm" style="background: #2196F3; color: white; padding: 5px 10px; font-size: 12px; margin-top: 5px;">
+                        📖 Voir le guide complet
+                    </button>
+                </div>
+
+                <!-- Guide détaillé (caché par défaut) -->
+                <div id="gmailGuideDetail" class="info-box" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #333;">📘 Comment configurer Gmail ?</h4>
+
+                    <div style="margin-bottom: 15px;">
+                        <h5 style="margin: 0 0 5px 0; color: #2E7D32;">Étape 1 : Activer l'authentification à 2 facteurs</h5>
+                        <ol style="margin: 5px 0; padding-left: 20px; font-size: 13px; color: #333;">
+                            <li>Allez sur <a href="https://myaccount.google.com" target="_blank">myaccount.google.com</a></li>
+                            <li>Cliquez sur "Sécurité" → "Validation en 2 étapes"</li>
+                            <li>Activez la validation en 2 étapes</li>
+                        </ol>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <h5 style="margin: 0 0 5px 0; color: #2E7D32;">Étape 2 : Créer un mot de passe d'application</h5>
+                        <ol style="margin: 5px 0; padding-left: 20px; font-size: 13px; color: #333;">
+                            <li>Allez sur <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+                            <li>Sélectionnez "Mail" et "Autre (nom personnalisé)"</li>
+                            <li>Nommez-le "Terrain Tir Arc"</li>
+                            <li>Copiez le mot de passe généré (16 caractères sans espaces)</li>
+                        </ol>
+                    </div>
+
+                    <div>
+                        <h5 style="margin: 0 0 5px 0; color: #2E7D32;">Étape 3 : Configurer l'application</h5>
+                        <p style="margin: 5px 0; font-size: 13px; color: #333;">
+                            Remplissez le formulaire ci-dessous avec votre email Gmail et le mot de passe d'application généré, puis testez la configuration.
+                        </p>
+                    </div>
+                </div>
+
+                <h4 style="margin: 20px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #ddd;">
+                    📝 Paramètres Email
+                </h4>
+
+                <!-- Serveur SMTP (pré-configuré pour Gmail) -->
+                <div class="form-group">
+                    <label for="smtpHost">Serveur SMTP</label>
+                    <input type="text" id="smtpHost" name="smtp_host" class="form-control" value="smtp.gmail.com" readonly style="background: #f5f5f5;">
+                    <small class="form-text">🔒 Serveur pré-configuré pour Gmail</small>
+                </div>
+
+                <!-- Port -->
+                <div class="form-group">
+                    <label for="smtpPort">Port</label>
+                    <input type="number" id="smtpPort" name="smtp_port" class="form-control" value="587" readonly style="background: #f5f5f5;">
+                    <small class="form-text">ℹ️ Port standard TLS (587)</small>
+                </div>
+
+                <!-- Email expéditeur -->
+                <div class="form-group">
+                    <label for="smtpUser">Adresse email expéditeur *</label>
+                    <input type="email" id="smtpUser" name="smtp_user" class="form-control" placeholder="votre.email@gmail.com" required>
+                    <small class="form-text">ℹ️ L'email qui enverra les notifications</small>
+                </div>
+
+                <!-- Mot de passe d'application -->
+                <div class="form-group">
+                    <label for="smtpPassword">Mot de passe d'application Gmail *</label>
+                    <div style="position: relative;">
+                        <input type="password" id="smtpPassword" name="smtp_password" class="form-control" placeholder="abcd efgh ijkl mnop" minlength="16" maxlength="16" required style="padding-right: 40px;">
+                        <button type="button" id="togglePasswordBtn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px;">
+                            👁️
+                        </button>
+                    </div>
+                    <small class="form-text">ℹ️ Mot de passe d'application (16 caractères générés par Google)</small>
+                </div>
+
+                <!-- Nom de l'expéditeur -->
+                <div class="form-group">
+                    <label for="emailFromName">Nom de l'expéditeur (optionnel)</label>
+                    <input type="text" id="emailFromName" name="email_from_name" class="form-control" placeholder="Club Tir à l'Arc Istres" maxlength="100">
+                    <small class="form-text">ℹ️ Apparaîtra comme nom dans l'email</small>
+                </div>
+
+                <hr style="margin: 20px 0;">
+
+                <!-- Email destinataire -->
+                <div class="form-group">
+                    <label for="emailIncidentsTo">Email destinataire incidents *</label>
+                    <input type="email" id="emailIncidentsTo" name="email_incidents_to" class="form-control" placeholder="responsable@club-tialarc.fr" required>
+                    <small class="form-text">ℹ️ Recevra les notifications d'incidents</small>
+                </div>
+
+                <!-- Email CC -->
+                <div class="form-group">
+                    <label for="emailIncidentsCc">Email en copie (CC) - optionnel</label>
+                    <input type="email" id="emailIncidentsCc" name="email_incidents_cc" class="form-control" placeholder="secretaire@club-tialarc.fr">
+                    <small class="form-text">ℹ️ Recevra une copie des notifications (optionnel)</small>
+                </div>
+
+                <!-- Activer/Désactiver -->
+                <div class="form-group" style="margin-top: 20px;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="emailEnabled" name="email_enabled" checked style="width: 20px; height: 20px; margin-right: 10px;">
+                        <span>✅ Activer l'envoi automatique d'emails pour les incidents</span>
+                    </label>
+                </div>
+
+                <hr style="margin: 20px 0;">
+
+                <!-- Section de test -->
+                <h4 style="margin: 20px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #ddd;">
+                    🧪 Test de Configuration
+                </h4>
+
+                <div style="margin: 15px 0;">
+                    <button type="button" id="testEmailBtn" class="btn btn-secondary" style="width: 100%;">
+                        🧪 Envoyer un email de test
+                    </button>
+                    <small class="form-text" style="display: block; margin-top: 10px; text-align: center; color: white;">ℹ️ L'email de test sera envoyé à l'adresse configurée ci-dessus</small>
+                </div>
+
+                <!-- Résultat du test -->
+                <div id="testResult" style="display: none; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                    <div id="testResultContent"></div>
+                </div>
+
+                <!-- Actions du formulaire -->
+                <div class="form-actions" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd;">
+                    <button type="submit" class="btn btn-primary" id="saveEmailConfigBtn">
+                        💾 Enregistrer la configuration
+                    </button>
+                    <button type="button" class="btn btn-secondary modal-close">
+                        Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalOverlay" class="modal-overlay hidden"></div>
+
+    <!-- Modal de notification -->
+    <div id="notificationModal" class="modal hidden" style="z-index: 10001;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div id="notificationIcon" style="font-size: 48px; margin-bottom: 15px;"></div>
+            <h3 id="notificationTitle" style="margin: 0 0 10px 0; color: #333;"></h3>
+            <p id="notificationMessage" style="margin: 0 0 20px 0; color: #666;"></p>
+            <button id="notificationCloseBtn" class="btn btn-primary" style="min-width: 120px;">OK</button>
+        </div>
+    </div>
+    <div id="notificationOverlay" class="modal-overlay hidden" style="z-index: 10000;"></div>
+
+    <!-- Logger doit être chargé en premier pour être disponible dans tous les autres scripts -->
+    <script src="../js/logger.js"></script>
+
+    <!-- Socket.io pour WebSocket (notifications temps réel) -->
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+    <!-- WebSocket Client pour notifications -->
+    <script src="../js/websocket-client.js?v=20251114d"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="../js/error-handler.js"></script>
+    <script src="../js/validators.js"></script>
+    <script src="../js/database.js"></script>
+    <script src="admin.js?v=20251117a"></script>
+</body>
+</html>
