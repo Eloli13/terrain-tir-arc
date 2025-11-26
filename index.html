@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Accès Terrains de Tir à l'Arc</title>
+    <link rel="icon" type="image/png" href="images/icon-192.png">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2E7D32">
+
+    <style>
+        /* Adaptations mobiles pour index.html */
+        @media (max-width: 768px) {
+            /* Réduction de la taille des caractères de 10% (90% de la taille normale) */
+            body, .container {
+                font-size: 90% !important;
+            }
+
+            /* Interlignes normales (100% - pas de réduction) */
+            body, .container, p, div, label, input, textarea, select, button {
+                line-height: normal !important;
+            }
+
+            /* Titres - 10% plus petits */
+            h1 {
+                font-size: 1.8rem !important; /* 90% de 2rem */
+            }
+
+            h2 {
+                font-size: 1.62rem !important; /* 90% de 1.8rem */
+            }
+
+            h3 {
+                font-size: 1.44rem !important; /* 90% de 1.6rem */
+            }
+
+            /* Header */
+            .header h1 {
+                font-size: 1.62rem !important;
+            }
+
+            .header p {
+                font-size: 0.99rem !important;
+            }
+
+            /* Stats */
+            .stat-card h4 {
+                font-size: 0.9rem !important;
+            }
+
+            .stat-value {
+                font-size: 1.35rem !important;
+            }
+
+            /* Scanner section */
+            .scanner-instructions {
+                font-size: 0.9rem !important;
+            }
+
+            /* Boutons */
+            .btn {
+                font-size: 0.9rem !important;
+                padding: 10px 16px !important;
+            }
+
+            /* Footer */
+            .footer {
+                font-size: 0.72rem !important;
+            }
+
+            /* Alert messages */
+            .alert {
+                font-size: 0.9rem !important;
+            }
+
+            /* Modal */
+            .modal h2 {
+                font-size: 1.62rem !important;
+            }
+
+            .form-group label {
+                font-size: 0.9rem !important;
+            }
+
+            .form-control {
+                font-size: 0.9rem !important;
+                padding: 8px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1>🎯 Terrains de Tir à l'Arc</h1>
+                <p>Istres Sports Tir à l'Arc</p>
+            </div>
+            <div class="header-actions">
+                <button id="adminAccessBtn" class="btn btn-secondary btn-admin">
+                    ⚙️
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="current-stats">
+                <h3>État Actuel des Terrains</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🏟️</div>
+                        <div class="stat-info">
+                            <h4>Terrain Intérieur</h4>
+                            <div class="stat-value">
+                                <span id="countInterieur">0</span> tireur(s)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🌳</div>
+                        <div class="stat-info">
+                            <h4>Terrain Extérieur</h4>
+                            <div class="stat-value">
+                                <span id="countExterieur">0</span> tireur(s)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="qr-scanner-section">
+                <p class="scanner-instructions"><strong>Scannez le QR code pour accéder aux terrains</strong></p>
+                <div class="scanner-container">
+                    <video id="scanner" class="scanner-video" playsinline></video>
+                    <div class="scanner-overlay">
+                        <div class="scanner-frame"></div>
+                    </div>
+                </div>
+                <button id="startScan" class="btn btn-primary">
+                    📱 Démarrer le Scanner
+                </button>
+                <div id="scanResult" class="scan-result hidden"></div>
+            </div>
+
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2025 Club Istres Sports Tir à l'Arc</p>
+        </footer>
+    </div>
+
+    <!-- Modal de connexion administrateur -->
+    <div id="adminModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔐 Accès Administration</h2>
+                <button id="closeAdminModal" class="modal-close">&times;</button>
+            </div>
+
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="adminPassword">Mot de passe administrateur</label>
+                    <input type="password" id="adminPassword" name="password"
+                           class="form-control" placeholder="Entrez le mot de passe" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        🔓 Se connecter
+                    </button>
+                    <button type="button" id="cancelAdminLogin" class="btn btn-secondary">
+                        Annuler
+                    </button>
+                </div>
+            </form>
+
+            <div id="adminLoginError" class="alert alert-danger hidden">
+                Mot de passe incorrect
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay modal -->
+    <div id="modalOverlay" class="modal-overlay hidden"></div>
+
+    <!-- Logger doit être chargé en premier pour être disponible dans tous les autres scripts -->
+    <script src="js/logger.js"></script>
+    <script src="js/storage-security.js"></script>
+    <script src="js/error-handler.js"></script>
+    <script src="js/validators.js"></script>
+    <script src="js/qr-scanner.js"></script>
+    <script src="js/database.js?v=20251113"></script>
+    <script src="js/app.js?v=20251113"></script>
+</body>
+</html>

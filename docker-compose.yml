@@ -1,0 +1,92 @@
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: tirallarc-db
+    environment:
+      POSTGRES_DB: terrain_tir_arc
+      POSTGRES_USER: tir_arc_user
+      POSTGRES_PASSWORD: dev_password_123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Le schéma est créé automatiquement par le backend Node.js
+      # - ./database.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tir_arc_user -d terrain_tir_arc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tirallarc-network
+
+  # Application (Backend + Frontend + Nginx)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tirallarc-app
+    ports:
+      - "80:80"
+    environment:
+      # Node.js
+      NODE_ENV: development
+      PORT: 3000
+
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: terrain_tir_arc
+      DB_USER: tir_arc_user
+      DB_PASSWORD: dev_password_123
+
+      # Sécurité (clés de développement - NE PAS UTILISER EN PRODUCTION)
+      JWT_SECRET: dev_jwt_secret_key_32_characters_long
+      JWT_REFRESH_SECRET: dev_refresh_secret_key_32_chars_long
+      SESSION_SECRET: dev_session_secret_key_32_chars_long
+
+      # CORS
+      ALLOWED_ORIGINS: http://localhost,http://localhost:80
+
+      # Logs
+      LOG_LEVEL: debug
+
+      # Rate limiting
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+    volumes:
+      # Volumes pour les données persistantes
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+
+      # Volumes pour le développement (hot reload)
+      # Décommentez ces lignes pour modifier le code sans rebuild
+      # - ./server:/app
+      # - /app/node_modules
+      # - ./css:/var/www/html/css
+      # - ./js:/var/www/html/js
+      # - ./admin:/var/www/html/admin
+      # - ./index.html:/var/www/html/index.html
+      # - ./declaration.html:/var/www/html/declaration.html
+      # - ./incident.html:/var/www/html/incident.html
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - tirallarc-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  tirallarc-network:
+    driver: bridge

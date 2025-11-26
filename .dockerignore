@@ -1,0 +1,100 @@
+# Fichiers et dossiers à exclure du contexte Docker
+# Cela réduit la taille de l'image et accélère le build
+
+# Dépendances (seront installées dans le conteneur)
+node_modules
+server/node_modules
+admin/node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Fichiers de configuration locale
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+README.md
+CHANGELOG.md
+CLEANUP.md
+CLEANUP_SUMMARY.md
+IMPLEMENTATION_SUMMARY.md
+RAPPORT_SECURITE.md
+DEPLOIEMENT_LINUX.md
+DEPLOIEMENT_MULTI_SITES.md
+GESTION_DOMAINES.md
+PANNEAUX_CONTROLE.md
+METHODES_DEPLOIEMENT.md
+COOLIFY_SANS_GIT.md
+UPDATES.md
+docs/
+documentation/
+
+# Fichiers de test
+*.test.js
+**/*.test.js
+__tests__/
+server/__tests__/
+coverage/
+.nyc_output/
+jest.config.js
+admin/admin.test.js
+
+# Fichiers temporaires
+*.log
+*.tmp
+*.temp
+logs/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Fichiers d'éditeur et IDE
+.vscode/
+.idea/
+*.sublime-*
+*.code-workspace
+
+# Fichiers système Windows
+nul
+ehthumbs.db
+
+# Uploads et données locales (seront montés en volumes)
+uploads/
+server/uploads/
+
+# Base de données locale
+*.db
+*.sqlite
+*.sqlite3
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Autres
+.eslintrc*
+.prettierrc*
+.editorconfig
