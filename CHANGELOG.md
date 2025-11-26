@@ -287,7 +287,7 @@ ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD
 
 ## Liens
 
-- [Repository GitHub](https://github.com/votre-username/terrain-tir-arc)
+- [Repository GitHub](https://github.com/Eloli13/terrain-tir-arc)
 - [Documentation](README.md)
 - [Guide de Déploiement](DEPLOYMENT.md)
 - [Guide de Contribution](CONTRIBUTING.md)
@@ -296,8 +296,8 @@ ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD
 
 **Note** : Les dates sont au format ISO 8601 (YYYY-MM-DD).
 
-[Non publié]: https://github.com/votre-username/terrain-tir-arc/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/votre-username/terrain-tir-arc/releases/tag/v1.0.0
-[0.9.0]: https://github.com/votre-username/terrain-tir-arc/releases/tag/v0.9.0
-[0.8.0]: https://github.com/votre-username/terrain-tir-arc/releases/tag/v0.8.0
-[0.5.0]: https://github.com/votre-username/terrain-tir-arc/releases/tag/v0.5.0
+[Non publié]: https://github.com/Eloli13/terrain-tir-arc/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Eloli13/terrain-tir-arc/releases/tag/v1.0.0
+[0.9.0]: https://github.com/Eloli13/terrain-tir-arc/releases/tag/v0.9.0
+[0.8.0]: https://github.com/Eloli13/terrain-tir-arc/releases/tag/v0.8.0
+[0.5.0]: https://github.com/Eloli13/terrain-tir-arc/releases/tag/v0.5.0
