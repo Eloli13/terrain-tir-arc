@@ -133,7 +133,7 @@ Cette application fournit :
 
 ```bash
 # Cloner le repository
-git clone https://github.com/votre-username/terrain-tir-arc.git
+git clone https://github.com/Eloli13/terrain-tir-arc.git
 cd terrain-tir-arc
 
 # Copier le fichier d'environnement exemple
@@ -166,7 +166,7 @@ docker-compose -f docker-compose.prod.yml logs -f app
 
 ```bash
 # Cloner le repository
-git clone https://github.com/votre-username/terrain-tir-arc.git
+git clone https://github.com/Eloli13/terrain-tir-arc.git
 cd terrain-tir-arc
 
 # Installer les dépendances backend
