@@ -14,6 +14,7 @@ const database = require('./config/database');
 const logger = require('./utils/logger');
 const websocketServer = require('./utils/websocket');
 const {
+    generateCspNonce,
     helmet,
     globalRateLimit,
     speedLimiter,
@@ -30,6 +31,7 @@ const sessionsRoutes = require('./routes/sessions');
 const incidentsRoutes = require('./routes/incidents');
 const configRoutes = require('./routes/config');
 const emailConfigRoutes = require('./routes/email-config');
+const securityRoutes = require('./routes/security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +49,7 @@ async function initializeApp() {
 
         // Configuration des middlewares de sécurité (ordre important)
         app.use(sanitizeHeaders);
+        app.use(generateCspNonce); // Générer le nonce AVANT helmet
         app.use(helmet);
         app.use(securityLogger);
         app.use(attackDetection);
@@ -99,6 +102,7 @@ async function initializeApp() {
         app.use('/api/v1/incidents', incidentsRoutes);
         app.use('/api/v1/config', configRoutes);
         app.use('/api/v1/email-config', emailConfigRoutes);
+        app.use('/api/v1/security', securityRoutes);
 
         // Routes sans version (rétro-compatibilité) - Redirigent vers v1
         app.use('/api/auth', authRoutes);
@@ -106,6 +110,7 @@ async function initializeApp() {
         app.use('/api/incidents', incidentsRoutes);
         app.use('/api/config', configRoutes);
         app.use('/api/email-config', emailConfigRoutes);
+        app.use('/api/security', securityRoutes);
 
         // Route de santé (health check)
         app.get('/health', async (req, res) => {
@@ -231,6 +236,13 @@ async function initializeApp() {
                         'PUT /api/v1/email-config': 'Mettre à jour configuration email',
                         'POST /api/v1/email-config/test': 'Tester configuration email',
                         'DELETE /api/v1/email-config': 'Désactiver notifications email'
+                    },
+                    security: {
+                        'GET /api/v1/security/status': 'Statut de sécurité du système (admin)',
+                        'GET /api/v1/security/audit-logs': 'Logs d\'audit avec filtres (admin)',
+                        'POST /api/v1/security/test-audit': 'Créer une entrée de test (admin)',
+                        'GET /api/v1/security/active-sessions': 'Lister toutes les sessions actives (admin)',
+                        'DELETE /api/v1/security/revoke-session/:id': 'Révoquer une session (admin)'
                     }
                 },
                 authentication: 'Bearer JWT Token requis pour toutes les routes sauf /health et signalement incidents',
