@@ -1,0 +1,134 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: tirallarc-db-prod
+    environment:
+      POSTGRES_DB: ${DB_NAME:-terrain_tir_arc}
+      POSTGRES_USER: ${DB_USER:-tir_arc_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-tir_arc_user} -d ${DB_NAME:-terrain_tir_arc}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - tirallarc-network-prod
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    image: tirallarc-app:${APP_VERSION:-latest}
+    container_name: tirallarc-app-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-terrain_tir_arc}
+      DB_USER: ${DB_USER:-tir_arc_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://votre-domaine.com}
+      LOG_LEVEL: ${LOG_LEVEL:-warn}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - tirallarc-network-prod
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backup:
+    image: postgres:15-alpine
+    container_name: tirallarc-backup-prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_DB: ${DB_NAME:-terrain_tir_arc}
+      POSTGRES_USER: ${DB_USER:-tir_arc_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_HOST: postgres
+      BACKUP_RETENTION_DAYS: 30
+    volumes:
+      - ./backups:/backups
+    networks:
+      - tirallarc-network-prod
+    restart: unless-stopped
+    command: >
+      sh -c "
+        while true; do
+          sleep 86400;
+          TIMESTAMP=$$(date +%Y%m%d_%H%M%S);
+          pg_dump -h postgres -U ${DB_USER:-tir_arc_user} ${DB_NAME:-terrain_tir_arc} > /backups/db_$$TIMESTAMP.sql;
+          find /backups -name 'db_*.sql' -mtime +${BACKUP_RETENTION_DAYS:-30} -delete;
+        done
+      "
+
+volumes:
+  postgres_data_prod:
+    driver: local
+
+networks:
+  tirallarc-network-prod:
+    driver: bridge
