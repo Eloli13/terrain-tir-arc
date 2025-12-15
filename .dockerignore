@@ -84,8 +84,8 @@ server/uploads/
 *.tar.gz
 *.rar
 
-# Docker
-Dockerfile
+# Docker (fichiers docker-compose et .dockerignore inutiles dans l'image)
+# IMPORTANT: Ne PAS exclure le Dockerfile lui-même !
 .dockerignore
 docker-compose*.yml
 
