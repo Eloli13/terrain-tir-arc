@@ -418,11 +418,36 @@ failed to solve: failed to read dockerfile: open Dockerfile: no such file or dir
 - Les fichiers de configuration essentiels (nginx.conf, start.sh, etc.)
 - Les dossiers sources nécessaires au build (server/, css/, js/, admin/)
 
-**Si vous avez toujours cette erreur :**
-1. Vérifiez votre `.dockerignore` : `cat .dockerignore | grep -i dockerfile`
-2. Assurez-vous que la ligne `Dockerfile` n'y figure pas
-3. Pull les derniers changements : `git pull origin main`
-4. Dans Coolify : **Force Rebuild** depuis l'interface
+**Si vous avez toujours cette erreur après mise à jour v1.0.2+ :**
+
+**Cause probable :** Coolify utilise un **cache de build** avec l'ancien `.dockerignore`.
+
+**Solutions (dans l'ordre) :**
+
+1. **Forcer le refresh Git dans Coolify :**
+   - Vérifiez le commit hash affiché dans Coolify
+   - Il doit être `64cfb6c` ou plus récent
+   - Cliquez sur "**Pull**" ou "**Sync**" pour forcer la récupération
+
+2. **Nettoyer le cache de build Docker :**
+   - Dans Coolify : Activez "**Clear Build Cache**" ou "**No Cache**"
+   - OU via SSH sur le serveur : `docker builder prune -a -f`
+
+3. **Force Rebuild complet :**
+   - Cliquez sur "**Deploy**" / "**Redeploy**"
+   - **Cochez** "**Force rebuild**" ou "**No cache**"
+   - Surveillez les logs : Le Dockerfile doit être transféré avec ~3.6KB, **PAS 2B**
+
+4. **Option nucléaire (si rien ne marche) :**
+   - Supprimez complètement la resource dans Coolify
+   - Recréez-la depuis zéro avec `docker-compose.coolify.yml`
+   - Cela force Coolify à tout nettoyer et repartir de zéro
+
+**Indicateur de succès dans les logs :**
+```
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 3.6KB done  ← Doit être ~3.6KB, PAS 2B !
+```
 
 ### Problème : Erreur 502 Bad Gateway
 
