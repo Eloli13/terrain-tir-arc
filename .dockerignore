@@ -7,7 +7,8 @@ server/node_modules
 admin/node_modules
 npm-debug.log
 yarn-error.log
-package-lock.json
+# IMPORTANT: Ne PAS exclure package-lock.json car npm ci en a besoin !
+# package-lock.json
 
 # Git
 .git
