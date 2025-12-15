@@ -19,22 +19,30 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ### 🔧 Correctifs Critiques Coolify
 
-Cette version corrige **deux problèmes bloquants** le déploiement sur Coolify.
+Cette version corrige **trois problèmes bloquants** le déploiement sur Coolify.
 
 ### 🐛 Corrigé
 
-#### Déploiement Coolify - Erreur "pull access denied"
+#### Déploiement Coolify - Erreur "pull access denied" (Bug #1)
 - **Erreur "pull access denied"** : Suppression de la directive `image:` dans [docker-compose.coolify.yml](docker-compose.coolify.yml:43)
   - Coolify essayait de télécharger `tirallarc-app:latest` depuis Docker Hub
   - L'image n'existe pas publiquement, causant l'échec du déploiement
   - Solution : Construction locale de l'image uniquement via le `build:`
 
-#### Déploiement Coolify - Erreur "Dockerfile not found" ⚠️ CRITIQUE
+#### Déploiement Coolify - Erreur "Dockerfile not found" (Bug #2) ⚠️ CRITIQUE
 - **Erreur "failed to read dockerfile"** : Suppression de `Dockerfile` du [.dockerignore](.dockerignore:88)
   - Le `.dockerignore` excluait le Dockerfile du build context
   - Causait l'erreur : `open Dockerfile: no such file or directory`
   - **Bug critique** : Le Dockerfile ne doit JAMAIS être dans le `.dockerignore`
   - Solution : Suppression de la ligne `Dockerfile` du `.dockerignore`
+
+#### Déploiement Coolify - Erreur "npm ci failed" (Bug #3) ⚠️ CRITIQUE
+- **Erreur "npm ci exit code 1"** : `package-lock.json` manquant dans le repo
+  - Le `package-lock.json` était dans [.gitignore](.gitignore:5) ET [.dockerignore](.dockerignore:10)
+  - `npm ci` dans le [Dockerfile](Dockerfile:44) nécessite `package-lock.json` pour fonctionner
+  - Causait l'erreur : `process "/bin/sh -c npm ci --production" did not complete successfully: exit code: 1`
+  - **Bug critique** : Le `package-lock.json` DOIT être versionné pour builds reproductibles
+  - Solution : Retrait de `package-lock.json` du `.gitignore` et `.dockerignore`, ajout au repo (229KB)
 
 #### Documentation
 - **Guide Coolify** : Mise à jour de [COOLIFY_SETUP.md](COOLIFY_SETUP.md)
@@ -44,17 +52,20 @@ Cette version corrige **deux problèmes bloquants** le déploiement sur Coolify.
 
 ### 📋 Impact
 
-**Avant v1.0.2 :** Déploiement Coolify échouait avec deux erreurs bloquantes :
+**Avant v1.0.2 :** Déploiement Coolify échouait avec trois erreurs bloquantes :
 ```
 1. pull access denied for tirallarc-app, repository does not exist
 2. failed to read dockerfile: open Dockerfile: no such file or directory
+3. npm ci did not complete successfully: exit code 1
 ```
 
-**Après v1.0.2 :** ✅ Déploiement Coolify réussit, l'image est construite localement avec le Dockerfile accessible.
+**Après v1.0.2 :** ✅ Déploiement Coolify réussit, l'image se build complètement.
 
 ### 📊 Fichiers Modifiés
 
-- `.dockerignore` : Suppression ligne `Dockerfile` (bug critique)
+- `.dockerignore` : Suppression lignes `Dockerfile` et `package-lock.json` (bugs critiques)
+- `.gitignore` : Suppression ligne `package-lock.json` (bug critique)
+- `server/package-lock.json` : Ajout au repo (229KB)
 - `docker-compose.coolify.yml` : Suppression ligne `image:`
 - `COOLIFY_SETUP.md` : Correction référence fichier + troubleshooting
 
