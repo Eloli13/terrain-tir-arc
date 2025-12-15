@@ -62,14 +62,14 @@ services:
 
       # Volumes pour le développement (hot reload)
       # Décommentez ces lignes pour modifier le code sans rebuild
-      # - ./server:/app
-      # - /app/node_modules
-      # - ./css:/var/www/html/css
-      # - ./js:/var/www/html/js
-      # - ./admin:/var/www/html/admin
-      # - ./index.html:/var/www/html/index.html
-      # - ./declaration.html:/var/www/html/declaration.html
-      # - ./incident.html:/var/www/html/incident.html
+      - ./server:/app
+      - /app/node_modules
+      - ./css:/var/www/html/css
+      - ./js:/var/www/html/js
+      - ./admin:/var/www/html/admin
+      - ./index.html:/var/www/html/index.html
+      - ./declaration.html:/var/www/html/declaration.html
+      - ./incident.html:/var/www/html/incident.html
     depends_on:
       postgres:
         condition: service_healthy

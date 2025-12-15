@@ -1,22 +1,37 @@
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
+const crypto = require('crypto');
 const logger = require('../utils/logger');
 
-// Configuration de sécurité Helmet
+// Middleware pour générer un nonce CSP unique par requête
+const generateCspNonce = (req, res, next) => {
+    res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+    next();
+};
+
+// Configuration de sécurité Helmet avec nonces dynamiques
 const helmetConfig = {
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            // Utilisation de nonces au lieu de 'unsafe-inline' pour une meilleure sécurité
+            styleSrc: [
+                "'self'",
+                "https://fonts.googleapis.com",
+                (req, res) => `'nonce-${res.locals.cspNonce}'`
+            ],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'"],
+            scriptSrc: [
+                "'self'",
+                (req, res) => `'nonce-${res.locals.cspNonce}'`
+            ],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'"],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
-            workerSrc: ["'none'"]
+            workerSrc: ["'self'"]
         }
     },
     crossOriginEmbedderPolicy: false // Désactivé pour compatibilité
@@ -32,8 +47,12 @@ const globalRateLimit = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Désactiver toutes les validations car notre proxy (Nginx) est dans le même conteneur (127.0.0.1)
-    validate: false,
+    // Trust proxy est géré au niveau de Express (app.set('trust proxy', true))
+    // Pas besoin de désactiver validate avec cette configuration
+    validate: {
+        trustProxy: true,
+        xForwardedForHeader: true
+    },
     handler: (req, res) => {
         logger.security('Rate limit dépassé', {
             ip: req.ip,
@@ -57,8 +76,11 @@ const authRateLimit = rateLimit({
         error: 'Trop de tentatives de connexion, veuillez réessayer dans 15 minutes.',
         retryAfter: 15 * 60
     },
-    // Désactiver toutes les validations car notre proxy (Nginx) est dans le même conteneur (127.0.0.1)
-    validate: false,
+    // Trust proxy est géré au niveau de Express (app.set('trust proxy', true))
+    validate: {
+        trustProxy: true,
+        xForwardedForHeader: true
+    },
     handler: (req, res) => {
         logger.security('Tentatives de connexion excessives', {
             ip: req.ip,
@@ -209,6 +231,7 @@ const sanitizeHeaders = (req, res, next) => {
 };
 
 module.exports = {
+    generateCspNonce,
     helmet: helmet(helmetConfig),
     globalRateLimit,
     authRateLimit,

@@ -8,10 +8,149 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### À venir
-- Tests automatisés avec Jest
-- CI/CD avec GitHub Actions
+- Tests automatisés avec Jest (en cours)
 - Monitoring avec Prometheus
 - Internationalisation (i18n)
+- Interface admin pour gestion des utilisateurs
+
+---
+
+## [1.0.1] - 2025-12-04
+
+### 🛡️ Version Sécurité Renforcée
+
+Cette version apporte des améliorations majeures de sécurité, une nouvelle API de monitoring, et des outils d'audit automatisés.
+
+### ✨ Ajouté
+
+#### API de Sécurité
+- **4 nouveaux endpoints admin** pour monitoring de sécurité :
+  - `GET /api/v1/security/status` - Score de sécurité 0-100 avec statistiques
+  - `GET /api/v1/security/audit-logs` - Consultation logs d'audit avec filtres
+  - `GET /api/v1/security/active-sessions` - Liste des sessions actives
+  - `DELETE /api/v1/security/revoke-session/:id` - Révocation de sessions
+
+#### Sécurité - CSP avec Nonces
+- **CSP renforcé** : Élimination complète de `'unsafe-inline'`
+- **Nonces dynamiques** : Génération aléatoire par requête (crypto.randomBytes)
+- **Protection XSS** : Défense en profondeur contre injections de scripts
+
+#### Changement de Mot de Passe Obligatoire
+- **Nouvelle colonne** : `must_change_password` dans table `admin_users`
+- **Blocage de connexion** : Force le changement avant première utilisation
+- **Migration automatique** : Ajout de colonne au démarrage (database.js)
+- **Migration manuelle** : `server/migrations/001_add_must_change_password.sql`
+
+#### Scripts de Sécurité
+- **`npm run security:audit`** : Audit complet avec score 0-100
+  - Vérification vulnérabilités npm (critical/high/moderate/low)
+  - Validation force des secrets (≥ 32 caractères)
+  - Analyse configuration (bcrypt, CORS, SSL, etc.)
+  - Recommandations personnalisées
+- **`npm run security:rotate`** : Rotation sécurisée des secrets JWT
+  - Génération cryptographique de nouveaux secrets
+  - Backup automatique de .env
+  - Mode dry-run : `npm run security:rotate:dry`
+- **`npm run test:security`** : Suite de tests automatisés
+  - 10 tests couvrant toutes les fonctionnalités de sécurité
+  - Validation must_change_password, CSP, rate limiting, JWT, etc.
+
+#### CI/CD GitHub Actions
+- **Workflow** : `.github/workflows/security.yml`
+  - Exécution sur push/PR vers main/develop
+  - Audit quotidien automatique à 3h UTC
+  - npm audit (fail sur moderate+)
+  - security-audit.js avec score
+  - CodeQL analysis pour vulnérabilités
+  - Dependency review sur PR
+
+#### Documentation
+- **SECURITY.md** : Guide complet de sécurité (650+ lignes)
+  - Architecture de sécurité détaillée
+  - API de sécurité documentée
+  - Scripts d'audit et rotation
+  - Best practices et recommandations
+- **TEST_GUIDE.md** : Guide de test des fonctionnalités (466+ lignes)
+  - Tests automatisés et manuels
+  - Exemples curl pour chaque endpoint
+  - Dépannage et troubleshooting
+  - Checklist de validation
+- **DEPLOYMENT.md mis à jour** :
+  - Section migrations de base de données
+  - Nouveaux scripts de sécurité
+  - Checklist déploiement enrichie
+  - Maintenance continue
+
+### 🔧 Modifié
+
+#### JWT - Algorithmes Explicites
+- **jwt.verify()** : Ajout de `algorithms: ['HS256']`
+- **jwt.sign()** : Ajout de `algorithm: 'HS256'`
+- **Prévention** : Protection contre attaques "algorithm confusion"
+- **Validation** : issuer='terrain-tir-arc-server', audience='terrain-tir-arc-client'
+
+#### WebSocket - Authentification Renforcée
+- **JWT WebSocket** : Algorithme explicite + validation issuer/audience
+- **Fichier** : `server/utils/websocket.js:38-42`
+
+#### PostgreSQL SSL
+- **SSL par défaut** : `rejectUnauthorized: true` en production
+- **Variable override** : `DB_SSL_REJECT_UNAUTHORIZED=false` si nécessaire
+- **Sécurité** : Validation des certificats activée
+
+#### Rate Limiting
+- **Configuration corrigée** : `validate: { trustProxy: true, xForwardedForHeader: true }`
+- **Compatibilité** : Meilleure détection IP avec reverse proxies (Nginx, Cloudflare)
+
+#### Secrets dans .env.example
+- **Placeholders** : Remplacement de tous les secrets réels
+- **Instructions** : Ajout de commandes de génération
+- **Sécurité repo** : Plus de secrets exposés dans le code
+
+#### Logs
+- **Mot de passe retiré** : Plus de log du mot de passe admin par défaut
+- **Fichier** : `server/config/database.js:246-248`
+
+### 📦 Dépendances
+
+#### Ajoutées (devDependencies)
+- `axios@^1.13.2` - Client HTTP pour tests de sécurité
+
+### 🔒 Sécurité
+
+#### Améliorations Critiques
+- ✅ Secrets exposés corrigés (.env.example)
+- ✅ JWT algorithm confusion prévenu
+- ✅ XSS protection renforcée (CSP sans unsafe-inline)
+- ✅ PostgreSQL SSL validation activée
+- ✅ Rate limiting proxy-aware
+
+#### Score de Sécurité
+- **Développement** : 70/100 (secrets courts volontairement)
+- **Production attendu** : 90-95/100 (avec secrets forts)
+
+### 📋 Checklist Déploiement Mise à Jour
+
+**Nouvelles étapes pour déploiement v1.0.1 :**
+- [ ] Migration `must_change_password` appliquée
+- [ ] Audit de sécurité exécuté (score ≥ 90/100)
+- [ ] Workflow GitHub Actions activé
+- [ ] API `/api/v1/security/status` testée
+- [ ] CSP avec nonces vérifié (headers HTTP)
+- [ ] Rate limiting testé (6 tentatives max)
+- [ ] Mot de passe admin par défaut changé
+
+### 📊 Statistiques
+
+- **Fichiers ajoutés** : 8
+  - 4 scripts (security-audit.js, rotate-secrets.js, test-security-features.js, reset-admin-flag.sql)
+  - 3 docs (SECURITY.md, TEST_GUIDE.md, 001_add_must_change_password.sql)
+  - 1 workflow (security.yml)
+- **Fichiers modifiés** : 8
+  - auth.js, security.js, database.js, websocket.js, server.js, package.json, .env.example, DEPLOYMENT.md
+- **Lignes ajoutées** : ~2500+
+- **Tests** : 10 tests automatisés
+- **Endpoints API** : +4
 
 ---
 

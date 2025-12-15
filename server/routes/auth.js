@@ -181,10 +181,10 @@ router.post('/change-password', requireAuth, async (req, res) => {
         // Hacher le nouveau mot de passe
         const { hash: newHash, salt: newSalt } = await authManager.hashPassword(newPassword);
 
-        // Mettre à jour le mot de passe
+        // Mettre à jour le mot de passe et retirer le flag must_change_password
         await database.query(`
             UPDATE admin_users
-            SET password_hash = $1, salt = $2
+            SET password_hash = $1, salt = $2, must_change_password = false
             WHERE id = $3
         `, [newHash, newSalt, req.user.id]);
 

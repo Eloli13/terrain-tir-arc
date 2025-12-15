@@ -9,7 +9,11 @@ class DatabaseManager {
             database: process.env.DB_NAME || 'terrain_tir_arc',
             user: process.env.DB_USER || 'tir_arc_user',
             password: process.env.DB_PASSWORD,
-            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+            // SSL en production avec validation du certificat
+            // Pour désactiver la validation (non recommandé), définir DB_SSL_REJECT_UNAUTHORIZED=false
+            ssl: process.env.NODE_ENV === 'production' ? {
+                rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
+            } : false,
             max: 20, // Maximum de connexions dans le pool
             idleTimeoutMillis: 30000, // Fermer les connexions inactives après 30s
             connectionTimeoutMillis: 2000, // Timeout de connexion 2s
@@ -54,6 +58,7 @@ class DatabaseManager {
                 password_hash VARCHAR(255) NOT NULL,
                 salt VARCHAR(255) NOT NULL,
                 is_active BOOLEAN DEFAULT true,
+                must_change_password BOOLEAN DEFAULT false,
                 last_login TIMESTAMP WITH TIME ZONE,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -233,9 +238,9 @@ class DatabaseManager {
             const passwordHash = await bcrypt.hash(saltedPassword, 12);
 
             await client.query(`
-                INSERT INTO admin_users (username, email, password_hash, salt)
-                VALUES ($1, $2, $3, $4)
-            `, [username, email, passwordHash, salt]);
+                INSERT INTO admin_users (username, email, password_hash, salt, must_change_password)
+                VALUES ($1, $2, $3, $4, $5)
+            `, [username, email, passwordHash, salt, true]);
 
             logger.info('Compte administrateur par défaut créé', {
                 username,
@@ -245,8 +250,7 @@ class DatabaseManager {
 
             logger.warn('SÉCURITÉ: Compte admin par défaut créé avec mot de passe faible !', {
                 username: 'admin',
-                password: 'changez-moi-en-production',
-                action: 'Changez immédiatement ce mot de passe !'
+                action: 'Changez immédiatement ce mot de passe via /api/v1/auth/change-password'
             });
         }
     }

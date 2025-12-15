@@ -35,7 +35,11 @@ class WebSocketServer {
 
             // Vérifier le token pour les admins
             try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+                    algorithms: ['HS256'],
+                    issuer: 'terrain-tir-arc-server',
+                    audience: 'terrain-tir-arc-client'
+                });
                 socket.data.userId = decoded.userId;
                 socket.data.username = decoded.username;
                 socket.data.userType = 'admin';

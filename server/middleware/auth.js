@@ -53,6 +53,7 @@ class AuthManager {
     // Générer un JWT token
     generateAccessToken(payload) {
         return jwt.sign(payload, this.jwtSecret, {
+            algorithm: 'HS256', // Algorithme explicite pour la sécurité
             expiresIn: '15m', // Token d'accès court
             issuer: 'terrain-tir-arc-server',
             audience: 'terrain-tir-arc-client'
@@ -62,6 +63,7 @@ class AuthManager {
     // Générer un refresh token
     generateRefreshToken(payload) {
         return jwt.sign(payload, this.jwtRefreshSecret, {
+            algorithm: 'HS256', // Algorithme explicite pour la sécurité
             expiresIn: '7d', // Refresh token plus long
             issuer: 'terrain-tir-arc-server',
             audience: 'terrain-tir-arc-client'
@@ -183,7 +185,7 @@ class AuthManager {
         try {
             // Récupérer l'utilisateur
             const userResult = await database.query(`
-                SELECT id, username, email, password_hash, salt, is_active, login_attempts, locked_until
+                SELECT id, username, email, password_hash, salt, is_active, must_change_password, login_attempts, locked_until
                 FROM admin_users
                 WHERE username = $1 OR email = $1
             `, [username]);
@@ -253,6 +255,22 @@ class AuthManager {
                     error: lockedUntil
                         ? 'Trop de tentatives. Compte verrouillé pour 30 minutes.'
                         : 'Identifiants invalides'
+                };
+            }
+
+            // Vérifier si l'utilisateur doit changer son mot de passe
+            if (user.must_change_password) {
+                logger.security('Connexion avec mot de passe à changer', {
+                    userId: user.id,
+                    username: user.username,
+                    ip: req.ip
+                });
+
+                return {
+                    success: false,
+                    error: 'Vous devez changer votre mot de passe par défaut',
+                    mustChangePassword: true,
+                    userId: user.id
                 };
             }
 

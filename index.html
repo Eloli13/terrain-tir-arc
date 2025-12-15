@@ -6,88 +6,49 @@
     <title>Gestion Accès Terrains de Tir à l'Arc</title>
     <link rel="icon" type="image/png" href="images/icon-192.png">
     <link rel="apple-touch-icon" href="images/icon-192.png">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2E7D32">
+    <meta name="description" content="Gestion des accès aux terrains de tir à l'arc pour Istres Sports Tir à l'Arc">
+    <meta property="og:title" content="Gestion Accès Terrains de Tir à l'Arc">
+    <meta property="og:description" content="Gestion des accès aux terrains de tir à l'arc pour Istres Sports Tir à l'Arc">
+    <meta property="og:image" content="images/icon-192.png">
+    <meta property="og:url" content="https://example.com/gestion-access">
+    <link rel="canonical" href="https://example.com/gestion-access">
 
     <style>
-        /* Adaptations mobiles pour index.html */
+        /* Styles desktop */
+        body, .container {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        h1 { font-size: 2rem; }
+        h2 { font-size: 1.8rem; }
+        h3 { font-size: 1.6rem; }
+
+        /* Styles mobiles */
         @media (max-width: 768px) {
-            /* Réduction de la taille des caractères de 10% (90% de la taille normale) */
             body, .container {
-                font-size: 90% !important;
+                font-size: 90%;
             }
 
-            /* Interlignes normales (100% - pas de réduction) */
-            body, .container, p, div, label, input, textarea, select, button {
-                line-height: normal !important;
-            }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.62rem; }
+            h3 { font-size: 1.44rem; }
 
-            /* Titres - 10% plus petits */
-            h1 {
-                font-size: 1.8rem !important; /* 90% de 2rem */
-            }
+            .header h1 { font-size: 1.62rem; }
+            .header p { font-size: 0.99rem; }
 
-            h2 {
-                font-size: 1.62rem !important; /* 90% de 1.8rem */
-            }
-
-            h3 {
-                font-size: 1.44rem !important; /* 90% de 1.6rem */
-            }
-
-            /* Header */
-            .header h1 {
-                font-size: 1.62rem !important;
-            }
-
-            .header p {
-                font-size: 0.99rem !important;
-            }
-
-            /* Stats */
-            .stat-card h4 {
-                font-size: 0.9rem !important;
-            }
-
-            .stat-value {
-                font-size: 1.35rem !important;
-            }
-
-            /* Scanner section */
-            .scanner-instructions {
-                font-size: 0.9rem !important;
-            }
-
-            /* Boutons */
-            .btn {
-                font-size: 0.9rem !important;
-                padding: 10px 16px !important;
-            }
-
-            /* Footer */
-            .footer {
-                font-size: 0.72rem !important;
-            }
-
-            /* Alert messages */
-            .alert {
-                font-size: 0.9rem !important;
-            }
-
-            /* Modal */
-            .modal h2 {
-                font-size: 1.62rem !important;
-            }
-
-            .form-group label {
-                font-size: 0.9rem !important;
-            }
-
-            .form-control {
-                font-size: 0.9rem !important;
-                padding: 8px !important;
-            }
+            .stat-card h4 { font-size: 0.9rem; }
+            .stat-value { font-size: 1.35rem; }
+            .scanner-instructions { font-size: 0.9rem; }
+            .btn { font-size: 0.9rem; padding: 10px 16px; }
+            .footer { font-size: 0.72rem; }
+            .alert { font-size: 0.9rem; }
+            .modal h2 { font-size: 1.62rem; }
+            .form-group label { font-size: 0.9rem; }
+            .form-control { font-size: 0.9rem; padding: 8px; }
         }
     </style>
 </head>
@@ -99,7 +60,7 @@
                 <p>Istres Sports Tir à l'Arc</p>
             </div>
             <div class="header-actions">
-                <button id="adminAccessBtn" class="btn btn-secondary btn-admin">
+                <button id="adminAccessBtn" class="btn btn-secondary btn-admin" aria-label="Accès administration">
                     ⚙️
                 </button>
             </div>
@@ -138,7 +99,7 @@
                         <div class="scanner-frame"></div>
                     </div>
                 </div>
-                <button id="startScan" class="btn btn-primary">
+                <button id="startScan" class="btn btn-primary" aria-label="Démarrer le scanner">
                     📱 Démarrer le Scanner
                 </button>
                 <div id="scanResult" class="scan-result hidden"></div>
@@ -156,21 +117,20 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>🔐 Accès Administration</h2>
-                <button id="closeAdminModal" class="modal-close">&times;</button>
+                <button id="closeAdminModal" class="modal-close" aria-label="Fermer la fenêtre modale">&times;</button>
             </div>
 
             <form id="adminLoginForm">
                 <div class="form-group">
-                    <label for="adminPassword">Mot de passe administrateur</label>
-                    <input type="password" id="adminPassword" name="password"
-                           class="form-control" placeholder="Entrez le mot de passe" required>
+                    <label for="adminPassword" aria-label="Mot de passe administrateur">Mot de passe administrateur</label>
+                    <input type="password" id="adminPassword" name="password" class="form-control" placeholder="Entrez le mot de passe" required>
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" aria-label="Se connecter">
                         🔓 Se connecter
                     </button>
-                    <button type="button" id="cancelAdminLogin" class="btn btn-secondary">
+                    <button type="button" id="cancelAdminLogin" class="btn btn-secondary" aria-label="Annuler">
                         Annuler
                     </button>
                 </div>
@@ -186,12 +146,12 @@
     <div id="modalOverlay" class="modal-overlay hidden"></div>
 
     <!-- Logger doit être chargé en premier pour être disponible dans tous les autres scripts -->
-    <script src="js/logger.js"></script>
-    <script src="js/storage-security.js"></script>
-    <script src="js/error-handler.js"></script>
-    <script src="js/validators.js"></script>
-    <script src="js/qr-scanner.js"></script>
-    <script src="js/database.js?v=20251113"></script>
-    <script src="js/app.js?v=20251113"></script>
+    <script src="/js/logger.js"></script>
+    <script src="/js/storage-security.js"></script>
+    <script src="/js/error-handler.js"></script>
+    <script src="/js/validators.js"></script>
+    <script src="/js/qr-scanner.js"></script>
+    <script src="/js/database.js?v=20251113"></script>
+    <script src="/js/app.js?v=20251113"></script>
 </body>
 </html>

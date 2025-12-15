@@ -119,6 +119,79 @@ BCRYPT_ROUNDS=12
 
 ---
 
+## 🔄 Migrations de Base de Données (v1.0.1+)
+
+**⚠️ IMPORTANT pour les déploiements existants**
+
+### Migration automatique
+
+La colonne `must_change_password` est créée automatiquement au démarrage depuis la v1.0.1.
+
+### Migration manuelle (optionnelle)
+
+Pour exécuter la migration avant le déploiement :
+
+```bash
+docker-compose -f docker-compose.prod.yml exec -T postgres \
+  psql -U tir_arc_user -d terrain_tir_arc < server/migrations/001_add_must_change_password.sql
+```
+
+**Vérification :**
+
+```bash
+docker-compose -f docker-compose.prod.yml exec postgres \
+  psql -U tir_arc_user -d terrain_tir_arc \
+  -c "\d admin_users" | grep must_change_password
+```
+
+---
+
+## 🛡️ Nouveaux Scripts de Sécurité (v1.0.1)
+
+### Audit de sécurité
+
+Vérifier le score de sécurité :
+
+```bash
+cd server
+npm run security:audit
+```
+
+**Score cible en production : ≥ 90/100**
+
+### Rotation des secrets
+
+```bash
+# Prévisualisation
+npm run security:rotate:dry
+
+# Rotation réelle (révoque tous les JWT actifs)
+npm run security:rotate
+```
+
+### CI/CD GitHub Actions
+
+Workflow automatique ajouté dans `.github/workflows/security.yml` :
+- ✅ npm audit sur chaque push/PR
+- ✅ security-audit.js quotidien à 3h UTC
+- ✅ CodeQL analysis
+- ✅ Dependency review
+
+### Nouvelles API de sécurité
+
+Endpoints admin ajoutés :
+
+```bash
+GET /api/v1/security/status          # Score et statistiques
+GET /api/v1/security/audit-logs      # Logs d'audit
+GET /api/v1/security/active-sessions # Sessions actives
+DELETE /api/v1/security/revoke-session/:id  # Révoquer une session
+```
+
+Documentation complète : [SECURITY.md](SECURITY.md)
+
+---
+
 ## 🎯 Déploiement avec Coolify
 
 **Coolify gère automatiquement :**
@@ -563,20 +636,32 @@ SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 50;
 
 ## ✅ Checklist de déploiement
 
-Avant de mettre en production :
+### Avant de mettre en production :
 
-- [ ] Secrets générés avec `generate-secrets.js`
+**Configuration de base :**
+- [ ] Secrets générés avec `generate-secrets.js` (≥ 32 caractères)
 - [ ] `.env.production` créé et configuré
 - [ ] `ALLOWED_ORIGINS` modifié avec votre domaine
 - [ ] Domaine DNS configuré et résolu
 - [ ] Ports 80 et 443 ouverts
 - [ ] PostgreSQL port 5432 **fermé** au public
-- [ ] Backups automatiques configurés
-- [ ] Health checks testés
-- [ ] Logs consultés sans erreurs
-- [ ] HTTPS fonctionnel
 - [ ] Secrets sauvegardés dans gestionnaire sécurisé
 - [ ] `.env.production` dans `.gitignore`
+
+**Sécurité (v1.0.1+) :**
+- [ ] Migration `must_change_password` appliquée (automatique ou manuelle)
+- [ ] Audit de sécurité exécuté : `npm run security:audit` (score ≥ 90/100)
+- [ ] Workflow GitHub Actions activé (`.github/workflows/security.yml`)
+- [ ] API de sécurité testée : `GET /api/v1/security/status`
+- [ ] CSP avec nonces activé (vérifier headers HTTP)
+- [ ] Rate limiting testé (6 tentatives max)
+- [ ] Mot de passe admin par défaut changé
+
+**Infrastructure :**
+- [ ] Backups automatiques configurés
+- [ ] Health checks testés : `GET /health`
+- [ ] Logs consultés sans erreurs
+- [ ] HTTPS fonctionnel (certificat valide)
 - [ ] Tests de charge effectués (optionnel)
 - [ ] Plan de rollback documenté
 
@@ -584,9 +669,27 @@ Avant de mettre en production :
 
 **Déploiement réussi ! 🎉**
 
-N'oubliez pas de :
-1. Monitorer régulièrement les logs
-2. Effectuer des backups manuels avant les mises à jour
-3. Tester les backups périodiquement
-4. Maintenir les dépendances à jour
-5. Surveiller les vulnérabilités de sécurité
+### Maintenance continue :
+
+1. **Sécurité :**
+   - Exécuter `npm run security:audit` mensuellement
+   - Surveiller les alertes GitHub Security (Dependabot)
+   - Consulter les logs d'audit : `GET /api/v1/security/audit-logs`
+   - Rotation des secrets tous les 90 jours (recommandé)
+
+2. **Monitoring :**
+   - Vérifier le score de sécurité : `GET /api/v1/security/status`
+   - Monitorer les sessions actives : `GET /api/v1/security/active-sessions`
+   - Consulter les logs quotidiennement
+   - Vérifier les métriques : `GET /metrics`
+
+3. **Backups :**
+   - Tester la restauration des backups mensuellement
+   - Effectuer des backups manuels avant chaque mise à jour
+   - Vérifier l'espace disque des backups
+
+4. **Mises à jour :**
+   - Maintenir Node.js à jour (version LTS)
+   - Exécuter `npm audit fix` régulièrement
+   - Suivre les release notes du projet
+   - Tester en staging avant production
