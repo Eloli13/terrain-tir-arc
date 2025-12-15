@@ -19,31 +19,42 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ### 🔧 Correctifs Critiques Coolify
 
-Cette version corrige un problème bloquant le déploiement sur Coolify.
+Cette version corrige **deux problèmes bloquants** le déploiement sur Coolify.
 
 ### 🐛 Corrigé
 
-#### Déploiement Coolify
+#### Déploiement Coolify - Erreur "pull access denied"
 - **Erreur "pull access denied"** : Suppression de la directive `image:` dans [docker-compose.coolify.yml](docker-compose.coolify.yml:43)
   - Coolify essayait de télécharger `tirallarc-app:latest` depuis Docker Hub
   - L'image n'existe pas publiquement, causant l'échec du déploiement
   - Solution : Construction locale de l'image uniquement via le `build:`
+
+#### Déploiement Coolify - Erreur "Dockerfile not found" ⚠️ CRITIQUE
+- **Erreur "failed to read dockerfile"** : Suppression de `Dockerfile` du [.dockerignore](.dockerignore:88)
+  - Le `.dockerignore` excluait le Dockerfile du build context
+  - Causait l'erreur : `open Dockerfile: no such file or directory`
+  - **Bug critique** : Le Dockerfile ne doit JAMAIS être dans le `.dockerignore`
+  - Solution : Suppression de la ligne `Dockerfile` du `.dockerignore`
+
+#### Documentation
 - **Guide Coolify** : Mise à jour de [COOLIFY_SETUP.md](COOLIFY_SETUP.md)
   - Référence correcte à `docker-compose.coolify.yml` au lieu de `docker-compose.prod.yml`
   - Ajout d'une note explicative sur les différences entre les fichiers
-  - Nouvelle section troubleshooting pour l'erreur "pull access denied"
+  - Nouvelle section troubleshooting pour les erreurs Coolify
 
 ### 📋 Impact
 
-**Avant v1.0.2 :** Déploiement Coolify échouait avec :
+**Avant v1.0.2 :** Déploiement Coolify échouait avec deux erreurs bloquantes :
 ```
-pull access denied for tirallarc-app, repository does not exist
+1. pull access denied for tirallarc-app, repository does not exist
+2. failed to read dockerfile: open Dockerfile: no such file or directory
 ```
 
-**Après v1.0.2 :** Déploiement Coolify réussit, l'image est construite localement.
+**Après v1.0.2 :** ✅ Déploiement Coolify réussit, l'image est construite localement avec le Dockerfile accessible.
 
 ### 📊 Fichiers Modifiés
 
+- `.dockerignore` : Suppression ligne `Dockerfile` (bug critique)
 - `docker-compose.coolify.yml` : Suppression ligne `image:`
 - `COOLIFY_SETUP.md` : Correction référence fichier + troubleshooting
 
