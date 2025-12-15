@@ -42,8 +42,7 @@ services:
         NODE_ENV: production
     container_name: tirallarc-app-prod
     ports:
-      - "80:80"
-      - "443:443"
+      - "3000:80"  # Coolify reverse proxy gère 80/443, on expose seulement le port interne
     environment:
       NODE_ENV: production
       PORT: ${PORT:-3000}
