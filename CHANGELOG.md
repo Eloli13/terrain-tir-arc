@@ -19,7 +19,7 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ### 🔧 Correctifs Critiques Coolify
 
-Cette version corrige **trois problèmes bloquants** le déploiement sur Coolify.
+Cette version corrige **quatre problèmes bloquants** le déploiement sur Coolify.
 
 ### 🐛 Corrigé
 
@@ -44,6 +44,13 @@ Cette version corrige **trois problèmes bloquants** le déploiement sur Coolify
   - **Bug critique** : Le `package-lock.json` DOIT être versionné pour builds reproductibles
   - Solution : Retrait de `package-lock.json` du `.gitignore` et `.dockerignore`, ajout au repo (229KB)
 
+#### Déploiement Coolify - Erreur "port already allocated" (Bug #4)
+- **Erreur "Bind for 0.0.0.0:80 failed"** : Conflit de port avec le reverse proxy Coolify
+  - Le [docker-compose.coolify.yml](docker-compose.coolify.yml:44-45) exposait les ports 80 et 443 directement
+  - Coolify utilise **Traefik** comme reverse proxy qui occupe déjà les ports 80/443
+  - Causait l'erreur : `failed to set up container networking: Bind for 0.0.0.0:80 failed: port is already allocated`
+  - Solution : Exposition du port interne `3000:80` au lieu de `80:80` et `443:443`, Traefik gère le routing HTTPS
+
 #### Documentation
 - **Guide Coolify** : Mise à jour de [COOLIFY_SETUP.md](COOLIFY_SETUP.md)
   - Référence correcte à `docker-compose.coolify.yml` au lieu de `docker-compose.prod.yml`
@@ -52,21 +59,22 @@ Cette version corrige **trois problèmes bloquants** le déploiement sur Coolify
 
 ### 📋 Impact
 
-**Avant v1.0.2 :** Déploiement Coolify échouait avec trois erreurs bloquantes :
+**Avant v1.0.2 :** Déploiement Coolify échouait avec quatre erreurs bloquantes :
 ```
 1. pull access denied for tirallarc-app, repository does not exist
 2. failed to read dockerfile: open Dockerfile: no such file or directory
 3. npm ci did not complete successfully: exit code 1
+4. Bind for 0.0.0.0:80 failed: port is already allocated
 ```
 
-**Après v1.0.2 :** ✅ Déploiement Coolify réussit, l'image se build complètement.
+**Après v1.0.2 :** ✅ Déploiement Coolify réussit et les conteneurs démarrent correctement.
 
 ### 📊 Fichiers Modifiés
 
 - `.dockerignore` : Suppression lignes `Dockerfile` et `package-lock.json` (bugs critiques)
 - `.gitignore` : Suppression ligne `package-lock.json` (bug critique)
 - `server/package-lock.json` : Ajout au repo (229KB)
-- `docker-compose.coolify.yml` : Suppression ligne `image:`
+- `docker-compose.coolify.yml` : Suppression ligne `image:` + changement ports `3000:80` (Traefik compatibility)
 - `COOLIFY_SETUP.md` : Correction référence fichier + troubleshooting
 
 ---
