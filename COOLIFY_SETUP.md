@@ -54,13 +54,18 @@ DB_PASSWORD=secure_db_password_123456789
    ```
    Repository URL: https://github.com/Eloli13/terrain-tir-arc
    Branch: main
-   Docker Compose File: docker-compose.prod.yml
+   Docker Compose File: docker-compose.coolify.yml
    ```
 
 3. **Build Configuration :**
    - **Build Pack :** Docker Compose
    - **Base Directory :** `.` (racine)
    - **Dockerfile :** `Dockerfile` (auto-détecté)
+
+**📌 Note importante :** Nous utilisons `docker-compose.coolify.yml` et non `docker-compose.prod.yml`. Le fichier Coolify est optimisé pour cette plateforme :
+- ✅ Pas de référence à une image Docker Hub (construction locale uniquement)
+- ✅ Configuration simplifiée pour Coolify
+- ✅ Service de backup avec planification quotidienne
 
 ---
 
@@ -370,6 +375,27 @@ Coolify → Environment Variables → Toutes les variables requises présentes ?
 docker ps
 # Le container postgres doit être "healthy"
 ```
+
+### Problème : "pull access denied for tirallarc-app"
+
+**Message d'erreur complet :**
+```
+Image tirallarc-app:latest pull access denied for tirallarc-app,
+repository does not exist or may require 'docker login'
+WARNING: Some service image(s) must be built from source
+```
+
+**Cause :** Le fichier Docker Compose contenait une directive `image:` qui faisait que Coolify essayait de télécharger l'image depuis Docker Hub au lieu de la construire localement.
+
+**Solution :**
+- ✅ **Déjà corrigé** dans `docker-compose.coolify.yml` (v1.0.1+)
+- La ligne `image: tirallarc-app:${APP_VERSION:-latest}` a été supprimée
+- Coolify construit maintenant l'image directement depuis le Dockerfile
+
+**Si vous avez toujours cette erreur :**
+1. Vérifiez que vous utilisez bien `docker-compose.coolify.yml`
+2. Assurez-vous que votre repository GitHub est à jour (git pull)
+3. Dans Coolify : **Force Rebuild** depuis l'interface
 
 ### Problème : Erreur 502 Bad Gateway
 

@@ -15,6 +15,40 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ---
 
+## [1.0.2] - 2025-12-15
+
+### 🔧 Correctifs Critiques Coolify
+
+Cette version corrige un problème bloquant le déploiement sur Coolify.
+
+### 🐛 Corrigé
+
+#### Déploiement Coolify
+- **Erreur "pull access denied"** : Suppression de la directive `image:` dans [docker-compose.coolify.yml](docker-compose.coolify.yml:43)
+  - Coolify essayait de télécharger `tirallarc-app:latest` depuis Docker Hub
+  - L'image n'existe pas publiquement, causant l'échec du déploiement
+  - Solution : Construction locale de l'image uniquement via le `build:`
+- **Guide Coolify** : Mise à jour de [COOLIFY_SETUP.md](COOLIFY_SETUP.md)
+  - Référence correcte à `docker-compose.coolify.yml` au lieu de `docker-compose.prod.yml`
+  - Ajout d'une note explicative sur les différences entre les fichiers
+  - Nouvelle section troubleshooting pour l'erreur "pull access denied"
+
+### 📋 Impact
+
+**Avant v1.0.2 :** Déploiement Coolify échouait avec :
+```
+pull access denied for tirallarc-app, repository does not exist
+```
+
+**Après v1.0.2 :** Déploiement Coolify réussit, l'image est construite localement.
+
+### 📊 Fichiers Modifiés
+
+- `docker-compose.coolify.yml` : Suppression ligne `image:`
+- `COOLIFY_SETUP.md` : Correction référence fichier + troubleshooting
+
+---
+
 ## [1.0.1] - 2025-12-04
 
 ### 🛡️ Version Sécurité Renforcée
