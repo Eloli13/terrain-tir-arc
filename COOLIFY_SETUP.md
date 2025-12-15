@@ -449,6 +449,66 @@ failed to solve: failed to read dockerfile: open Dockerfile: no such file or dir
 #2 transferring dockerfile: 3.6KB done  ← Doit être ~3.6KB, PAS 2B !
 ```
 
+### Problème : "npm ci did not complete successfully: exit code: 1" ⚠️ CRITIQUE
+
+**Message d'erreur complet :**
+```
+#8 [dependencies 3/3] RUN npm ci --production --no-optional && npm cache clean --force
+#8 ERROR: process "/bin/sh -c npm ci --production --no-optional && npm cache clean --force"
+did not complete successfully: exit code: 1
+```
+
+**Cause :** Le fichier `package-lock.json` était absent du repository. La commande `npm ci` nécessite absolument `package-lock.json` pour fonctionner, contrairement à `npm install`.
+
+**Solution :**
+- ✅ **Déjà corrigé** dans v1.0.2+
+- `package-lock.json` a été ajouté au repository (229KB)
+- Les exclusions de `package-lock.json` ont été supprimées de `.gitignore` et `.dockerignore`
+
+**⚠️ IMPORTANT :** Pour des builds reproductibles en production :
+- Le `package-lock.json` **DOIT** être versionné dans Git
+- Ne **JAMAIS** ajouter `package-lock.json` à `.gitignore` ou `.dockerignore`
+- Utiliser `npm ci` en production, **PAS** `npm install`
+
+**Si vous avez toujours cette erreur :**
+1. Vérifiez que votre repository GitHub contient `server/package-lock.json`
+2. Force Rebuild dans Coolify avec cache clearing
+
+### Problème : "Bind for 0.0.0.0:80 failed: port is already allocated"
+
+**Message d'erreur complet :**
+```
+Error response from daemon: failed to set up container networking:
+driver failed programming external connectivity on endpoint app-xxx:
+Bind for 0.0.0.0:80 failed: port is already allocated
+```
+
+**Cause :** Coolify utilise **Traefik** comme reverse proxy intégré qui occupe déjà les ports 80 et 443 sur l'hôte. Le `docker-compose.coolify.yml` essayait d'exposer ces ports directement, créant un conflit.
+
+**Solution :**
+- ✅ **Déjà corrigé** dans `docker-compose.coolify.yml` (v1.0.2+)
+- Ports changés de `"80:80"` et `"443:443"` vers `"3000:80"`
+- L'application expose maintenant le port **3000** en interne
+- **Traefik** gère automatiquement le routing HTTPS (80/443 → 3000)
+
+**⚠️ IMPORTANT pour Coolify :**
+- Ne **JAMAIS** exposer les ports 80 ou 443 directement dans `docker-compose.coolify.yml`
+- Traefik se charge du SSL/TLS et du routing automatiquement
+- Exposer uniquement un port interne (ex: 3000, 8080, etc.)
+- Coolify détecte automatiquement le port et configure Traefik
+
+**Architecture Coolify :**
+```
+Internet (80/443) → Traefik (reverse proxy) → Votre App (port 3000)
+                       ↑
+                   Gère SSL/TLS, routing, headers
+```
+
+**Si vous avez toujours cette erreur :**
+1. Vérifiez le mapping de ports dans `docker-compose.coolify.yml` : doit être `"3000:80"` ou similaire
+2. Force Rebuild dans Coolify
+3. Assurez-vous qu'aucun autre service n'utilise le port 80/443 sur l'hôte
+
 ### Problème : Erreur 502 Bad Gateway
 
 **Cause :** L'application n'est pas encore prête
