@@ -388,7 +388,7 @@ WARNING: Some service image(s) must be built from source
 **Cause :** Le fichier Docker Compose contenait une directive `image:` qui faisait que Coolify essayait de télécharger l'image depuis Docker Hub au lieu de la construire localement.
 
 **Solution :**
-- ✅ **Déjà corrigé** dans `docker-compose.coolify.yml` (v1.0.1+)
+- ✅ **Déjà corrigé** dans `docker-compose.coolify.yml` (v1.0.2+)
 - La ligne `image: tirallarc-app:${APP_VERSION:-latest}` a été supprimée
 - Coolify construit maintenant l'image directement depuis le Dockerfile
 
@@ -396,6 +396,33 @@ WARNING: Some service image(s) must be built from source
 1. Vérifiez que vous utilisez bien `docker-compose.coolify.yml`
 2. Assurez-vous que votre repository GitHub est à jour (git pull)
 3. Dans Coolify : **Force Rebuild** depuis l'interface
+
+### Problème : "failed to read dockerfile: no such file or directory" ⚠️ CRITIQUE
+
+**Message d'erreur complet :**
+```
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2B 0.0s done
+failed to solve: failed to read dockerfile: open Dockerfile: no such file or directory
+```
+
+**Cause :** Le fichier `.dockerignore` contenait une ligne `Dockerfile` qui excluait le Dockerfile lui-même du build context Docker. C'est une erreur de configuration courante mais critique.
+
+**Solution :**
+- ✅ **Déjà corrigé** dans `.dockerignore` (v1.0.2+)
+- La ligne `Dockerfile` a été supprimée du `.dockerignore`
+- Le Dockerfile est maintenant accessible lors du build
+
+**⚠️ IMPORTANT :** Le `.dockerignore` ne doit **JAMAIS** exclure :
+- Le `Dockerfile` lui-même
+- Les fichiers de configuration essentiels (nginx.conf, start.sh, etc.)
+- Les dossiers sources nécessaires au build (server/, css/, js/, admin/)
+
+**Si vous avez toujours cette erreur :**
+1. Vérifiez votre `.dockerignore` : `cat .dockerignore | grep -i dockerfile`
+2. Assurez-vous que la ligne `Dockerfile` n'y figure pas
+3. Pull les derniers changements : `git pull origin main`
+4. Dans Coolify : **Force Rebuild** depuis l'interface
 
 ### Problème : Erreur 502 Bad Gateway
 
