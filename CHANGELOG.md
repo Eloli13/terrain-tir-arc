@@ -19,7 +19,7 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ### 🔧 Correctifs Critiques Coolify
 
-Cette version corrige **quatre problèmes bloquants** le déploiement sur Coolify.
+Cette version corrige **cinq problèmes bloquants** le déploiement sur Coolify.
 
 ### 🐛 Corrigé
 
@@ -51,6 +51,14 @@ Cette version corrige **quatre problèmes bloquants** le déploiement sur Coolif
   - Causait l'erreur : `failed to set up container networking: Bind for 0.0.0.0:80 failed: port is already allocated`
   - Solution : Exposition du port interne `3000:80` au lieu de `80:80` et `443:443`, Traefik gère le routing HTTPS
 
+#### Déploiement Coolify - Container restart loop (Bug #5) ⚠️ CRITIQUE
+- **Erreur "Container restart loop"** : Le container crash immédiatement au démarrage sans logs
+  - Le chemin `pid /run/nginx/nginx.pid;` dans [nginx.conf](nginx.conf:4) n'existe pas sur Alpine Linux
+  - Le test `nginx -t` dans [start.sh](start.sh:23) échoue
+  - Le script exécute `exit 1` (ligne 29), crashant le container **avant** que les logs ne soient écrits
+  - **Bug critique** : Aucun log n'est produit, rendant le diagnostic très difficile
+  - Solution : Changement vers `/var/run/nginx.pid` (chemin standard pour nginx:alpine)
+
 #### Documentation
 - **Guide Coolify** : Mise à jour de [COOLIFY_SETUP.md](COOLIFY_SETUP.md)
   - Référence correcte à `docker-compose.coolify.yml` au lieu de `docker-compose.prod.yml`
@@ -59,15 +67,16 @@ Cette version corrige **quatre problèmes bloquants** le déploiement sur Coolif
 
 ### 📋 Impact
 
-**Avant v1.0.2 :** Déploiement Coolify échouait avec quatre erreurs bloquantes :
+**Avant v1.0.2 :** Déploiement Coolify échouait avec cinq erreurs bloquantes :
 ```
 1. pull access denied for tirallarc-app, repository does not exist
 2. failed to read dockerfile: open Dockerfile: no such file or directory
 3. npm ci did not complete successfully: exit code 1
 4. Bind for 0.0.0.0:80 failed: port is already allocated
+5. Container restart loop sans logs (nginx PID path incorrect)
 ```
 
-**Après v1.0.2 :** ✅ Déploiement Coolify réussit et les conteneurs démarrent correctement.
+**Après v1.0.2 :** ✅ Déploiement Coolify réussit, les conteneurs démarrent et l'application est accessible.
 
 ### 📊 Fichiers Modifiés
 
@@ -75,6 +84,7 @@ Cette version corrige **quatre problèmes bloquants** le déploiement sur Coolif
 - `.gitignore` : Suppression ligne `package-lock.json` (bug critique)
 - `server/package-lock.json` : Ajout au repo (229KB)
 - `docker-compose.coolify.yml` : Suppression ligne `image:` + changement ports `3000:80` (Traefik compatibility)
+- `nginx.conf` : Correction chemin PID `/var/run/nginx.pid` (Alpine Linux compatibility)
 - `COOLIFY_SETUP.md` : Correction référence fichier + troubleshooting
 
 ---
