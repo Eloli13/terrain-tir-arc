@@ -509,6 +509,61 @@ Internet (80/443) → Traefik (reverse proxy) → Votre App (port 3000)
 2. Force Rebuild dans Coolify
 3. Assurez-vous qu'aucun autre service n'utilise le port 80/443 sur l'hôte
 
+### Problème : "Container restart loop" sans logs ⚠️ CRITIQUE
+
+**Message d'erreur complet :**
+```
+Container restarting continuously
+Logs are empty or show no output
+```
+
+**Cause :** Le container crash **immédiatement** au démarrage, avant même d'écrire des logs. Dans notre cas, le chemin du fichier PID de Nginx était incorrect pour Alpine Linux.
+
+**Symptômes :**
+- Le container démarre puis redémarre en boucle (restart loop)
+- Les logs de l'application sont **complètement vides**
+- Le healthcheck n'a jamais le temps de s'exécuter
+- Aucun message d'erreur visible
+
+**Solution v1.0.2+ :**
+- ✅ **Déjà corrigé** dans `nginx.conf` (ligne 4)
+- Chemin PID changé de `/run/nginx/nginx.pid` vers `/var/run/nginx.pid`
+- Compatible avec nginx:alpine standard
+
+**Diagnostic si vous avez ce problème :**
+
+1. **Vérifier que Nginx peut démarrer :**
+   - Le script [start.sh](start.sh:23) teste `nginx -t`
+   - Si ce test échoue, le container exit immédiatement
+   - Vérifiez [nginx.conf](nginx.conf:4) : doit être `pid /var/run/nginx.pid;`
+
+2. **Causes courantes de restart loop silencieux :**
+   - Configuration Nginx invalide (le plus fréquent)
+   - Permissions de fichiers incorrectes
+   - Variables d'environnement critiques manquantes (mais génère des warnings)
+   - Port déjà utilisé (mais génère une erreur visible)
+
+3. **Debug manuel (si accès SSH) :**
+   ```bash
+   # Récupérer le container ID
+   docker ps -a | grep tirallarc-app
+
+   # Essayer de démarrer manuellement
+   docker run --rm -it <image-id> /bin/sh
+
+   # Tester nginx
+   nginx -t
+
+   # Vérifier les chemins
+   ls -la /run/nginx/
+   ls -la /var/run/
+   ```
+
+**⚠️ IMPORTANT :**
+- Un restart loop **sans logs** indique généralement un problème de configuration système (Nginx, permissions, chemins)
+- Un restart loop **avec logs** indique un problème applicatif (Node.js, variables env, DB)
+- Toujours vérifier les logs de **déploiement** ET les logs **runtime**
+
 ### Problème : Erreur 502 Bad Gateway
 
 **Cause :** L'application n'est pas encore prête
