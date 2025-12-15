@@ -40,7 +40,6 @@ services:
       dockerfile: Dockerfile
       args:
         NODE_ENV: production
-    image: tirallarc-app:${APP_VERSION:-latest}
     container_name: tirallarc-app-prod
     ports:
       - "80:80"
