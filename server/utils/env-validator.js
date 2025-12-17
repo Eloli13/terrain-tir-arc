@@ -135,6 +135,15 @@ function validateEnvironment() {
 
     // Arrêter si erreurs critiques
     if (errors.length > 0) {
+        // Utiliser console.error EN PLUS de logger pour s'assurer que les erreurs sont visibles
+        // (Winston peut ne pas flush avant que le processus ne meure)
+        console.error('\n❌ VALIDATION DES VARIABLES D\'ENVIRONNEMENT ÉCHOUÉE');
+        console.error('Erreurs détectées:');
+        errors.forEach(error => console.error(error));
+        console.error('');
+        console.error('Le serveur ne peut pas démarrer avec une configuration invalide.');
+        console.error('Veuillez corriger les erreurs dans Coolify → Environment Variables\n');
+
         logger.error('❌ VALIDATION DES VARIABLES D\'ENVIRONNEMENT ÉCHOUÉE');
         logger.error('Erreurs détectées:');
         errors.forEach(error => logger.error(error));
