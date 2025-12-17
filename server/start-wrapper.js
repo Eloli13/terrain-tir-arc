@@ -36,12 +36,27 @@ console.error = function(...args) {
 };
 
 // Démarrer le serveur principal
-try {
-    process.stdout.write('[WRAPPER] Chargement du serveur principal...\n');
-    require('./server.js');
-} catch (error) {
-    process.stdout.write('\n[WRAPPER] ❌ ERREUR DE CHARGEMENT DU SERVEUR:\n');
+async function startServer() {
+    try {
+        process.stdout.write('[WRAPPER] Chargement du serveur principal...\n');
+        const { initializeApp } = require('./server.js');
+
+        process.stdout.write('[WRAPPER] Initialisation de l\'application...\n');
+        await initializeApp();
+
+        process.stdout.write('[WRAPPER] ✅ Serveur démarré avec succès\n');
+    } catch (error) {
+        process.stdout.write('\n[WRAPPER] ❌ ERREUR DE DÉMARRAGE DU SERVEUR:\n');
+        process.stdout.write(error.stack || error.message || String(error));
+        process.stdout.write('\n\n');
+        process.exit(1);
+    }
+}
+
+// Lancer le démarrage
+startServer().catch((error) => {
+    process.stdout.write('\n[WRAPPER] ❌ ERREUR FATALE:\n');
     process.stdout.write(error.stack || error.message || String(error));
     process.stdout.write('\n\n');
     process.exit(1);
-}
+});
