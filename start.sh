@@ -37,8 +37,9 @@ echo ""
 echo "Démarrage du backend Node.js..."
 cd /app
 
-# Rediriger stderr vers stdout pour capturer toutes les erreurs
-su-exec nodejs node server.js 2>&1
+# Utiliser le wrapper qui force l'affichage des erreurs
+# Rediriger stderr vers stdout ET forcer unbuffered output
+su-exec nodejs node --unhandled-rejections=strict start-wrapper.js 2>&1
 
 # Si on arrive ici, Node.js a crashé
 EXIT_CODE=$?
