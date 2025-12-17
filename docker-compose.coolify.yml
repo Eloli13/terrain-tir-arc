@@ -6,8 +6,7 @@ services:
       POSTGRES_DB: ${DB_NAME:-terrain_tir_arc}
       POSTGRES_USER: ${DB_USER:-tir_arc_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "127.0.0.1:5432:5432"
+    # Port non exposé sur l'hôte - communication interne uniquement
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     healthcheck:
@@ -66,8 +65,8 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     volumes:
-      - ./uploads:/app/uploads
-      - ./logs:/app/logs
+      - app_uploads_prod:/app/uploads
+      - app_logs_prod:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -109,7 +108,7 @@ services:
       POSTGRES_HOST: postgres
       BACKUP_RETENTION_DAYS: 30
     volumes:
-      - ./backups:/backups
+      - app_backups_prod:/backups
     networks:
       - tirallarc-network-prod
     restart: unless-stopped
@@ -125,6 +124,12 @@ services:
 
 volumes:
   postgres_data_prod:
+    driver: local
+  app_uploads_prod:
+    driver: local
+  app_logs_prod:
+    driver: local
+  app_backups_prod:
     driver: local
 
 networks:
