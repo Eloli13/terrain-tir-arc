@@ -89,9 +89,6 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# Copier le fichier health
-COPY health /var/www/html/
-
 # Variables d'environnement par défaut
 ENV NODE_ENV=production \
     PORT=3000 \
