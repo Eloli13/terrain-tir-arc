@@ -82,20 +82,15 @@ COPY --chown=nginx:nginx images/ /var/www/html/images/
 # Copier le dossier admin
 COPY --chown=nginx:nginx admin/ /var/www/html/admin/
 
-# ============================================
-# Copier les fichiers de configuration
-# ============================================
-
-# Copier la configuration Nginx
+# Copier le fichier de configuration Nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copier le script de démarrage
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# ============================================
-# Configuration finale
-# ============================================
+# Copier le fichier health
+COPY health /var/www/html/
 
 # Variables d'environnement par défaut
 ENV NODE_ENV=production \
