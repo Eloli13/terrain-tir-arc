@@ -36,4 +36,13 @@ sleep 2
 echo ""
 echo "Démarrage du backend Node.js..."
 cd /app
-exec su-exec nodejs node server.js
+
+# Rediriger stderr vers stdout pour capturer toutes les erreurs
+su-exec nodejs node server.js 2>&1
+
+# Si on arrive ici, Node.js a crashé
+EXIT_CODE=$?
+echo ""
+echo "✗ ERREUR: Le backend Node.js s'est arrêté avec le code $EXIT_CODE"
+echo "Vérifiez les variables d'environnement dans Coolify"
+exit $EXIT_CODE
