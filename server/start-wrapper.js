@@ -37,54 +37,76 @@ console.error = function(...args) {
 
 // Démarrer le serveur principal
 async function startServer() {
-    let error = null;
+    let initializeApp;
 
     try {
-        process.stdout.write('[WRAPPER] Chargement du serveur principal...\n');
-
-        const { initializeApp } = require('./server.js');
-
-        process.stdout.write('[WRAPPER] Initialisation de l\'application...\n');
-
-        await initializeApp();
-
-        process.stdout.write('[WRAPPER] ✅ Serveur démarré avec succès\n');
+        console.log('[WRAPPER] Chargement du serveur principal...');
+        initializeApp = require('./server.js').initializeApp;
+        console.log('[WRAPPER] Module serveur chargé avec succès');
     } catch (err) {
-        error = err;
-
-        // FORCE l'affichage de l'erreur avec console.error (déjà redirigé vers stdout)
-        // console.error écrit sur stderr qui n'est PAS bufferisé
-        console.error('\n========================================');
-        console.error('[WRAPPER] ❌ ERREUR DE DÉMARRAGE DU SERVEUR:');
-        console.error('========================================');
-        console.error('Message:', err.message || 'Aucun message');
-        console.error('Type:', err.constructor.name);
+        // Erreur pendant le chargement du module (ex: validateEnvironment qui throw)
+        const errorDetails = [
+            '\n========================================',
+            '[WRAPPER] ❌ ERREUR DE CHARGEMENT DU MODULE:',
+            '========================================',
+            `Message: ${err.message || 'Aucun message'}`,
+            `Type: ${err.constructor.name}`,
+            ''
+        ];
 
         if (err.stack) {
-            console.error('\nStack trace:');
-            console.error(err.stack);
+            errorDetails.push('Stack trace:');
+            errorDetails.push(err.stack);
         }
 
-        console.error('\n========================================\n');
+        errorDetails.push('========================================\n');
 
-        // AUSSI écrire directement sur stderr (file descriptor 2) pour être ABSOLUMENT SÛR
-        const errorMsg = `\n[WRAPPER] ❌ ERREUR CRITIQUE: ${err.message || String(err)}\n\n`;
-        process.stderr.write(errorMsg);
+        const fullError = errorDetails.join('\n');
+        console.log(fullError);
+        console.error(fullError);
+        process.exit(1);
+    }
 
-        // ET sur stdout
-        process.stdout.write(errorMsg);
+    try {
+        console.log('[WRAPPER] Initialisation de l\'application...');
+        await initializeApp();
+        console.log('[WRAPPER] ✅ Serveur démarré avec succès');
+    } catch (err) {
+        // Utiliser console.log ET console.error pour maximiser les chances de voir l'erreur
+        const errorDetails = [
+            '\n========================================',
+            '[WRAPPER] ❌ ERREUR DE DÉMARRAGE DU SERVEUR:',
+            '========================================',
+            `Message: ${err.message || 'Aucun message'}`,
+            `Type: ${err.constructor.name}`,
+            ''
+        ];
 
-        // Attendre que tout flush (augmenté à 500ms pour être sûr)
-        await new Promise(resolve => setTimeout(resolve, 500));
+        if (err.stack) {
+            errorDetails.push('Stack trace:');
+            errorDetails.push(err.stack);
+        }
 
+        errorDetails.push('========================================\n');
+
+        const fullError = errorDetails.join('\n');
+
+        // Écrire sur console.log ET console.error
+        console.log(fullError);
+        console.error(fullError);
+
+        // Forcer la sortie immédiate sans attente
         process.exit(1);
     }
 }
 
 // Lancer le démarrage
 startServer().catch((error) => {
-    process.stdout.write('\n[WRAPPER] ❌ ERREUR FATALE:\n');
-    process.stdout.write(error.stack || error.message || String(error));
-    process.stdout.write('\n\n');
+    console.log('\n[WRAPPER] ❌ ERREUR FATALE:');
+    console.log(error.stack || error.message || String(error));
+    console.log('');
+    console.error('\n[WRAPPER] ❌ ERREUR FATALE:');
+    console.error(error.stack || error.message || String(error));
+    console.error('');
     process.exit(1);
 });
