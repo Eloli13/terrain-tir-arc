@@ -41,17 +41,14 @@ async function startServer() {
 
     try {
         process.stdout.write('[WRAPPER] Chargement du serveur principal...\n');
-        process.stdout.flush();
 
         const { initializeApp } = require('./server.js');
 
         process.stdout.write('[WRAPPER] Initialisation de l\'application...\n');
-        process.stdout.flush();
 
         await initializeApp();
 
         process.stdout.write('[WRAPPER] ✅ Serveur démarré avec succès\n');
-        process.stdout.flush();
     } catch (err) {
         error = err;
 
