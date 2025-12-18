@@ -55,25 +55,30 @@ async function startServer() {
     } catch (err) {
         error = err;
 
-        // FORCE l'affichage de l'erreur avec console.log (plus fiable que stdout)
-        console.log('\n========================================');
-        console.log('[WRAPPER] ❌ ERREUR DE DÉMARRAGE DU SERVEUR:');
-        console.log('========================================');
-        console.log('Message:', err.message || 'Aucun message');
-        console.log('Type:', err.constructor.name);
+        // FORCE l'affichage de l'erreur avec console.error (déjà redirigé vers stdout)
+        // console.error écrit sur stderr qui n'est PAS bufferisé
+        console.error('\n========================================');
+        console.error('[WRAPPER] ❌ ERREUR DE DÉMARRAGE DU SERVEUR:');
+        console.error('========================================');
+        console.error('Message:', err.message || 'Aucun message');
+        console.error('Type:', err.constructor.name);
 
         if (err.stack) {
-            console.log('\nStack trace:');
-            console.log(err.stack);
+            console.error('\nStack trace:');
+            console.error(err.stack);
         }
 
-        console.log('\n========================================\n');
+        console.error('\n========================================\n');
 
-        // Aussi sur stdout pour être sûr
-        process.stdout.write('\n[WRAPPER] ❌ ERREUR: ' + (err.message || String(err)) + '\n');
+        // AUSSI écrire directement sur stderr (file descriptor 2) pour être ABSOLUMENT SÛR
+        const errorMsg = `\n[WRAPPER] ❌ ERREUR CRITIQUE: ${err.message || String(err)}\n\n`;
+        process.stderr.write(errorMsg);
 
-        // Attendre que tout flush
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // ET sur stdout
+        process.stdout.write(errorMsg);
+
+        // Attendre que tout flush (augmenté à 500ms pour être sûr)
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         process.exit(1);
     }
