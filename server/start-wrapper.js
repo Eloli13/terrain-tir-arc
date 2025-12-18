@@ -14,16 +14,32 @@ process.on('exit', (code) => {
 
 // Capturer les erreurs non gérées
 process.on('uncaughtException', (error) => {
-    process.stdout.write('\n[WRAPPER] ❌ ERREUR NON GÉRÉE:\n');
-    process.stdout.write(error.stack || error.message || String(error));
-    process.stdout.write('\n\n');
+    const errorMsg = '\n[WRAPPER] ❌ ERREUR NON GÉRÉE:\n' +
+                     (error.stack || error.message || String(error)) + '\n\n';
+
+    // Écriture synchrone sur stderr ET stdout
+    process.stderr.write(errorMsg);
+    process.stdout.write(errorMsg);
+
+    // Attendre pour laisser les buffers flusher
+    const waitForFlush = Date.now() + 100;
+    while (Date.now() < waitForFlush) { /* spin wait */ }
+
     process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
-    process.stdout.write('\n[WRAPPER] ❌ PROMISE REJETÉE:\n');
-    process.stdout.write(String(reason));
-    process.stdout.write('\n\n');
+    const errorMsg = '\n[WRAPPER] ❌ PROMISE REJETÉE:\n' +
+                     (String(reason)) + '\n\n';
+
+    // Écriture synchrone sur stderr ET stdout
+    process.stderr.write(errorMsg);
+    process.stdout.write(errorMsg);
+
+    // Attendre pour laisser les buffers flusher
+    const waitForFlush = Date.now() + 100;
+    while (Date.now() < waitForFlush) { /* spin wait */ }
+
     process.exit(1);
 });
 
@@ -40,9 +56,9 @@ async function startServer() {
     let initializeApp;
 
     try {
-        console.log('[WRAPPER] Chargement du serveur principal...');
+        process.stderr.write('[WRAPPER] Chargement du serveur principal...\n');
         initializeApp = require('./server.js').initializeApp;
-        console.log('[WRAPPER] Module serveur chargé avec succès');
+        process.stderr.write('[WRAPPER] Module serveur chargé avec succès\n');
     } catch (err) {
         // Erreur pendant le chargement du module (ex: validateEnvironment qui throw)
         const errorDetails = [
@@ -62,17 +78,24 @@ async function startServer() {
         errorDetails.push('========================================\n');
 
         const fullError = errorDetails.join('\n');
-        console.log(fullError);
-        console.error(fullError);
+
+        // Écriture synchrone sur stderr (plus fiable que console.log)
+        process.stderr.write(fullError);
+        process.stdout.write(fullError);
+
+        // Attendre un court instant pour laisser les buffers flusher
+        const waitForFlush = Date.now() + 100;
+        while (Date.now() < waitForFlush) { /* spin wait */ }
+
         process.exit(1);
     }
 
     try {
-        console.log('[WRAPPER] Initialisation de l\'application...');
+        process.stderr.write('[WRAPPER] Initialisation de l\'application...\n');
         await initializeApp();
-        console.log('[WRAPPER] ✅ Serveur démarré avec succès');
+        process.stderr.write('[WRAPPER] ✅ Serveur démarré avec succès\n');
     } catch (err) {
-        // Utiliser console.log ET console.error pour maximiser les chances de voir l'erreur
+        // Utiliser process.stderr.write pour écriture synchrone (plus fiable que console.log)
         const errorDetails = [
             '\n========================================',
             '[WRAPPER] ❌ ERREUR DE DÉMARRAGE DU SERVEUR:',
@@ -91,22 +114,30 @@ async function startServer() {
 
         const fullError = errorDetails.join('\n');
 
-        // Écrire sur console.log ET console.error
-        console.log(fullError);
-        console.error(fullError);
+        // Écriture synchrone sur stderr ET stdout pour maximiser visibilité
+        process.stderr.write(fullError);
+        process.stdout.write(fullError);
 
-        // Forcer la sortie immédiate sans attente
+        // Attendre pour laisser les buffers flusher
+        const waitForFlush = Date.now() + 100;
+        while (Date.now() < waitForFlush) { /* spin wait */ }
+
         process.exit(1);
     }
 }
 
 // Lancer le démarrage
 startServer().catch((error) => {
-    console.log('\n[WRAPPER] ❌ ERREUR FATALE:');
-    console.log(error.stack || error.message || String(error));
-    console.log('');
-    console.error('\n[WRAPPER] ❌ ERREUR FATALE:');
-    console.error(error.stack || error.message || String(error));
-    console.error('');
+    const errorMsg = '\n[WRAPPER] ❌ ERREUR FATALE:\n' +
+                     (error.stack || error.message || String(error)) + '\n';
+
+    // Écriture synchrone sur stderr ET stdout
+    process.stderr.write(errorMsg);
+    process.stdout.write(errorMsg);
+
+    // Attendre pour laisser les buffers flusher
+    const waitForFlush = Date.now() + 100;
+    while (Date.now() < waitForFlush) { /* spin wait */ }
+
     process.exit(1);
 });
