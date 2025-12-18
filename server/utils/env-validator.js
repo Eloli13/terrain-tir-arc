@@ -23,6 +23,9 @@ const REQUIRED_ENV_VARS = {
     // Sécurité - Session
     SESSION_SECRET: 'Clé secrète pour les sessions (min 32 caractères)',
 
+    // Sécurité - Encryption
+    ENCRYPTION_KEY: 'Clé de chiffrement AES-256 pour les données sensibles (64 caractères hex)',
+
     // Application
     NODE_ENV: 'Environnement d\'exécution (development/production)',
     PORT: 'Port du serveur backend'
@@ -43,7 +46,7 @@ const OPTIONAL_ENV_VARS = {
  * Validation des secrets (longueur minimale)
  */
 const SECRET_MIN_LENGTH = 32;
-const SECRETS_TO_VALIDATE = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'SESSION_SECRET'];
+const SECRETS_TO_VALIDATE = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'SESSION_SECRET', 'ENCRYPTION_KEY'];
 
 /**
  * Valider toutes les variables d'environnement
@@ -57,8 +60,8 @@ function validateEnvironment() {
 
     // Vérifier les variables requises
     for (const [varName, description] of Object.entries(REQUIRED_ENV_VARS)) {
-        if (!process.env[varName]) {
-            errors.push(`❌ ${varName} manquante - ${description}`);
+        if (!process.env[varName] || process.env[varName].trim() === '') {
+            errors.push(`❌ ${varName} manquante ou vide - ${description}`);
         } else {
             logger.debug(`✓ ${varName} définie`);
         }
@@ -69,6 +72,23 @@ function validateEnvironment() {
         if (process.env[secretName] && process.env[secretName].length < SECRET_MIN_LENGTH) {
             errors.push(
                 `❌ ${secretName} trop courte - Doit contenir au moins ${SECRET_MIN_LENGTH} caractères (actuel: ${process.env[secretName].length})`
+            );
+        }
+    }
+
+    // Validation spécifique pour ENCRYPTION_KEY (format hexadécimal attendu)
+    const encKey = process.env.ENCRYPTION_KEY;
+    if (encKey) {
+        // Une clé AES-256 devrait être en format hexadécimal (64 caractères = 32 bytes)
+        if (!/^[0-9a-fA-F]+$/.test(encKey)) {
+            warnings.push(
+                `⚠️ ENCRYPTION_KEY ne semble pas être en format hexadécimal. Assurez-vous qu'elle est correcte pour AES-256.`
+            );
+        }
+        // En production, vérifier que c'est bien 64 caractères hex pour AES-256
+        if (process.env.NODE_ENV === 'production' && encKey.length !== 64) {
+            warnings.push(
+                `⚠️ ENCRYPTION_KEY devrait faire 64 caractères hexadécimaux pour AES-256 (actuel: ${encKey.length})`
             );
         }
     }
@@ -184,6 +204,7 @@ function generateStrongSecrets() {
         JWT_SECRET: crypto.randomBytes(48).toString('base64'),
         JWT_REFRESH_SECRET: crypto.randomBytes(48).toString('base64'),
         SESSION_SECRET: crypto.randomBytes(48).toString('base64'),
+        ENCRYPTION_KEY: crypto.randomBytes(32).toString('hex'), // 32 bytes = 64 caractères hex pour AES-256
         DB_PASSWORD: crypto.randomBytes(24).toString('base64').replace(/[^a-zA-Z0-9]/g, '')
     };
 }

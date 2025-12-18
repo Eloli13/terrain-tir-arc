@@ -1,27 +1,34 @@
 /**
  * Module de chiffrement/déchiffrement pour les données sensibles
- * Utilise AES-256-CBC pour sécuriser les mots de passe SMTP
+ * Utilise AES-256-CBC
+ * Version Optimisée : Cache la clé dérivée pour ne pas bloquer l'Event Loop
  */
 
 const crypto = require('crypto');
 const logger = require('./logger');
 
-// Clé de chiffrement depuis les variables d'environnement
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || process.env.SESSION_SECRET;
-
-if (!ENCRYPTION_KEY) {
-    logger.error('ENCRYPTION_KEY ou SESSION_SECRET non définie dans .env');
-    throw new Error('Clé de chiffrement manquante. Définissez ENCRYPTION_KEY dans .env');
+// 1. Validation stricte : On ne veut PAS de fallback sur SESSION_SECRET
+// C'est le rôle de env-validator.js de s'assurer que cette variable existe.
+if (!process.env.ENCRYPTION_KEY) {
+    const msg = 'CRITIQUE : ENCRYPTION_KEY manquante dans process.env (encryption.js)';
+    logger.error(msg);
+    // On crash volontairement ici si ça arrive, pour éviter de corrompre des données
+    throw new Error(msg);
 }
 
-// Dériver une clé de 32 bytes depuis la clé fournie
-const algorithm = 'aes-256-cbc';
+const RAW_KEY = process.env.ENCRYPTION_KEY;
+const ALGORITHM = 'aes-256-cbc';
+const SALT = 'salt'; // On garde le sel hardcodé pour compatibilité avec vos données existantes
 
-/**
- * Générer une clé de chiffrement de 32 bytes
- */
-function getKey() {
-    return crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+// 2. OPTIMISATION : On dérive la clé UNE SEULE FOIS au démarrage
+// scryptSync est lent, on ne veut pas le faire à chaque requête !
+let CACHED_KEY;
+try {
+    CACHED_KEY = crypto.scryptSync(RAW_KEY, SALT, 32);
+    logger.info('🔑 Clé de chiffrement dérivée et chargée en mémoire avec succès');
+} catch (err) {
+    logger.error('Erreur fatale lors de la dérivation de la clé', err);
+    throw err;
 }
 
 /**
@@ -31,23 +38,19 @@ function getKey() {
  */
 function encrypt(text) {
     try {
-        if (!text) {
-            return null;
-        }
+        if (!text) return null;
 
-        const key = getKey();
-        const iv = crypto.randomBytes(16); // Vecteur d'initialisation aléatoire
-        const cipher = crypto.createCipheriv(algorithm, key, iv);
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv(ALGORITHM, CACHED_KEY, iv);
 
         let encrypted = cipher.update(text, 'utf8', 'hex');
         encrypted += cipher.final('hex');
 
-        // Retourner IV + données chiffrées (séparés par :)
         return iv.toString('hex') + ':' + encrypted;
-
     } catch (error) {
-        logger.error('Erreur lors du chiffrement:', error);
-        throw new Error('Échec du chiffrement');
+        logger.error('Erreur chiffrement:', error);
+        // Ne jamais renvoyer l'erreur brute au client pour ne pas fuiter d'infos
+        throw new Error('Erreur interne de sécurité (Encryption)');
     }
 }
 
@@ -58,30 +61,30 @@ function encrypt(text) {
  */
 function decrypt(encryptedText) {
     try {
-        if (!encryptedText) {
+        if (!encryptedText) return null;
+
+        const parts = encryptedText.split(':');
+        if (parts.length !== 2) {
+            // Ce n'est pas un format valide, on retourne null ou on log
+            // (Utile si la DB contient parfois du texte non chiffré par erreur)
+            logger.warn('Tentative de déchiffrement d\'un format invalide');
             return null;
         }
 
-        const key = getKey();
-        const parts = encryptedText.split(':');
-
-        if (parts.length !== 2) {
-            throw new Error('Format de texte chiffré invalide');
-        }
-
         const iv = Buffer.from(parts[0], 'hex');
-        const encrypted = parts[1];
+        const encryptedContent = parts[1];
 
-        const decipher = crypto.createDecipheriv(algorithm, key, iv);
+        const decipher = crypto.createDecipheriv(ALGORITHM, CACHED_KEY, iv);
 
-        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        let decrypted = decipher.update(encryptedContent, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
 
         return decrypted;
-
     } catch (error) {
-        logger.error('Erreur lors du déchiffrement:', error);
-        throw new Error('Échec du déchiffrement');
+        logger.error('Erreur déchiffrement:', error.message);
+        // Si le déchiffrement échoue (mauvaise clé ? données corrompues ?),
+        // on lance une erreur pour que l'appelant sache que ça a échoué.
+        throw new Error('Échec du déchiffrement (Clé invalide ou données corrompues)');
     }
 }
 
@@ -91,11 +94,7 @@ function decrypt(encryptedText) {
  * @returns {boolean}
  */
 function isEncrypted(text) {
-    if (!text || typeof text !== 'string') {
-        return false;
-    }
-
-    // Format attendu: "hex:hex" avec au moins 32 caractères pour l'IV
+    if (!text || typeof text !== 'string') return false;
     const parts = text.split(':');
     return parts.length === 2 && parts[0].length === 32 && /^[0-9a-f]+$/i.test(parts[0]);
 }
