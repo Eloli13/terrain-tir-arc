@@ -6,6 +6,7 @@ validateEnvironment();
 
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const cors = require('cors');
 const compression = require('compression');
 
@@ -96,6 +97,18 @@ async function initializeApp() {
         // Servir les fichiers uploadés (photos incidents)
         app.use('/uploads', express.static('uploads'));
 
+        // Servir les fichiers statiques du Frontend (dossier public créé dans le Dockerfile)
+        // maxAge définit le cache browser (1 jour), bon pour la performance
+        app.use(express.static(path.join(__dirname, 'public'), {
+            maxAge: '1d',
+            setHeaders: (res, filePath) => {
+                if (filePath.endsWith('.html')) {
+                    // Pas de cache pour les HTML pour que les mises à jour soient immédiates
+                    res.setHeader('Cache-Control', 'no-cache');
+                }
+            }
+        }));
+
         // Routes API v1 (versionnées)
         app.use('/api/v1/auth', authRoutes);
         app.use('/api/v1/sessions', sessionsRoutes);
@@ -181,16 +194,9 @@ async function initializeApp() {
             }
         });
 
-        // Route par défaut
+        // Route par défaut - Servir la page d'accueil
         app.get('/', (req, res) => {
-            res.json({
-                message: 'Serveur de gestion des terrains de tir à l\'arc',
-                version: process.env.npm_package_version || '1.0.0',
-                environment: process.env.NODE_ENV || 'development',
-                documentation: '/api/docs',
-                health: '/health',
-                metrics: '/metrics'
-            });
+            res.sendFile(path.join(__dirname, 'public', 'index.html'));
         });
 
         // Documentation API simple

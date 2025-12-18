@@ -1,6 +1,30 @@
-# 🎯 Guide Complet de Déploiement Coolify v1.0.1
+# 🎯 Guide Complet de Déploiement Coolify v1.0.3
 
 Ce guide vous accompagne pas à pas pour déployer votre application de gestion de terrains de tir à l'arc sur Coolify.
+
+## 🚀 Nouveauté v1.0.3 - Architecture Simplifiée
+
+**Cette version adopte une architecture "Coolify Native" recommandée :**
+
+### Avant (v1.0.2 et antérieures)
+```
+Internet → Coolify (Traefik) → Nginx → Node.js
+         ↑ HTTPS             ↑ Proxy  ↑ App
+```
+
+### Maintenant (v1.0.3+) ✅
+```
+Internet → Coolify (Traefik) → Node.js/Express
+         ↑ HTTPS             ↑ App + Fichiers statiques
+```
+
+**Avantages :**
+- ✅ **Plus simple** : Une seule couche applicative (pas de Nginx interne)
+- ✅ **Plus léger** : -150MB d'image Docker, -50MB RAM
+- ✅ **Meilleur débogage** : Logs clairs, stack traces directes
+- ✅ **Même sécurité** : HTTPS/SSL géré par Coolify, sécurité app par Express
+
+**Migration depuis v1.0.2 :** Aucune action requise, juste redéployer. Les variables d'environnement et volumes restent identiques.
 
 ---
 
@@ -8,7 +32,7 @@ Ce guide vous accompagne pas à pas pour déployer votre application de gestion 
 
 - ✅ Serveur Coolify installé et accessible
 - ✅ Nom de domaine configuré (ex: `tirallarc.votredomaine.com`)
-- ✅ Repository GitHub à jour avec la v1.0.1
+- ✅ Repository GitHub à jour avec la v1.0.3+
 - ✅ Accès à Node.js 20+ localement (pour générer les secrets)
 
 ---

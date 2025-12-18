@@ -1,112 +1,57 @@
 # ============================================
-# Dockerfile complet pour Gestion Site Tir à l'Arc
-# Backend Node.js + Frontend statique + Nginx
-# Optimisé pour production avec Coolify
+# Dockerfile simplifié pour Gestion Site Tir à l'Arc
+# Backend Node.js + Frontend statique servi par Express
+# Optimisé pour production avec Coolify (Architecture Coolify Native)
 # ============================================
 
-# ============================================
-# Stage 1: Builder - Installation des dépendances backend
-# ============================================
-FROM node:20-alpine AS backend-builder
+FROM node:20-alpine
 
 LABEL maintainer="eloli"
 LABEL description="Application de gestion des terrains de tir à l'arc"
-LABEL version="1.0.0"
+LABEL version="1.0.3"
 
 WORKDIR /app
 
-# Copier uniquement les fichiers package pour profiter du cache Docker
+# Installation des dépendances
 COPY server/package*.json ./
-
-# Installer les dépendances de production uniquement
 RUN npm ci --production --no-optional && \
     npm cache clean --force
 
-# ============================================
-# Stage 2: Image de production avec Nginx + Node.js
-# ============================================
-FROM node:20-alpine
+# Copie du code source du backend
+COPY server/ .
 
-# Installer Nginx et les outils nécessaires
-RUN apk add --no-cache \
-    nginx \
-    dumb-init \
-    curl \
-    su-exec
+# Copie du frontend dans un dossier 'public' pour qu'Express le serve
+COPY index.html ./public/
+COPY declaration.html ./public/
+COPY incident.html ./public/
+COPY manifest.json ./public/
+COPY sw.js ./public/
+COPY css/ ./public/css/
+COPY js/ ./public/js/
+COPY images/ ./public/images/
+COPY admin/ ./public/admin/
 
-# Créer un utilisateur non-root pour Node.js
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-# Créer les répertoires nécessaires
-RUN mkdir -p /var/www/html \
-    /app \
-    /var/log/nginx \
-    /var/lib/nginx/tmp \
-    /run/nginx && \
-    chown -R nginx:nginx /var/www/html /var/log/nginx /var/lib/nginx /run/nginx
-
-WORKDIR /app
-
-# ============================================
-# Copier le backend Node.js
-# ============================================
-
-# Copier les dépendances depuis le builder
-COPY --from=backend-builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-
-# Copier le code source du backend
-COPY --chown=nodejs:nodejs server/ .
-
-# Créer les répertoires pour uploads et logs avec les bonnes permissions
-RUN mkdir -p /app/uploads/incidents /app/logs && \
-    chown -R nodejs:nodejs /app/uploads /app/logs && \
-    chmod -R 755 /app/uploads /app/logs
-
-# ============================================
-# Copier le frontend statique
-# ============================================
-
-# Copier tous les fichiers HTML du frontend
-COPY --chown=nginx:nginx index.html /var/www/html/
-COPY --chown=nginx:nginx declaration.html /var/www/html/
-COPY --chown=nginx:nginx incident.html /var/www/html/
-COPY --chown=nginx:nginx manifest.json /var/www/html/
-COPY --chown=nginx:nginx sw.js /var/www/html/
-
-# Copier les dossiers CSS, JS, Images
-COPY --chown=nginx:nginx css/ /var/www/html/css/
-COPY --chown=nginx:nginx js/ /var/www/html/js/
-COPY --chown=nginx:nginx images/ /var/www/html/images/
-
-# Copier le dossier admin
-COPY --chown=nginx:nginx admin/ /var/www/html/admin/
-
-# Copier le fichier de configuration Nginx
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copier le script de démarrage
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+# Création des dossiers pour les données
+RUN mkdir -p uploads/incidents logs && \
+    chown -R node:node /app
 
 # Variables d'environnement par défaut
 ENV NODE_ENV=production \
     PORT=3000 \
     LOG_LEVEL=info
 
-# Exposer le port 80 (Nginx)
-# Le port 3000 (Node.js) reste interne
-EXPOSE 80
+# Exposer le port 3000 (Coolify gère le proxy HTTPS)
+EXPOSE 3000
 
 # Volume pour les données persistantes
 VOLUME ["/app/uploads", "/app/logs"]
 
-# Health check sur Nginx
+# Health check sur l'application Node.js
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost/health || exit 1
+    CMD node -e "require('http').get('http://localhost:3000/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })"
 
-# Point d'entrée avec dumb-init pour gérer les signaux
-ENTRYPOINT ["dumb-init", "--"]
+# Utiliser l'utilisateur non-root 'node' (fourni par l'image node:alpine)
+USER node
 
-# Commande de démarrage
-CMD ["/start.sh"]
+# Démarrage direct de Node avec le wrapper pour capturer les erreurs
+CMD ["node", "start-wrapper.js"]

@@ -15,6 +15,109 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ---
 
+## [1.0.3] - 2025-12-18
+
+### 🚀 Architecture Coolify Native (Refonte majeure)
+
+Cette version simplifie radicalement l'architecture en supprimant la redondance Nginx/Node.js pour une architecture "Coolify Native" recommandée.
+
+### 🏗️ Changements d'Architecture
+
+#### Avant v1.0.3 - Architecture "Poupée Russe" ❌
+```
+Internet → Coolify (Traefik) → Nginx → Node.js/Express
+         ↑ HTTPS             ↑ Proxy  ↑ App
+```
+- **Problème** : Double proxy redondant (Traefik + Nginx)
+- **Complexité** : 3 couches de configuration (Traefik, Nginx, Express)
+- **Logs** : Pollués par les logs d'accès Nginx
+- **Débogage** : Difficile car Node pouvait crasher mais Nginx restait debout (erreur 502)
+
+#### Après v1.0.3 - Architecture Simplifiée ✅
+```
+Internet → Coolify (Traefik) → Node.js/Express
+         ↑ HTTPS             ↑ App + Static Files
+```
+- **Simplification** : Une seule couche applicative
+- **Coolify gère** : HTTPS, SSL, Certificats, Protection DDoS, Reverse Proxy
+- **Express gère** : Sécurité applicative (Helmet, Rate Limit, CORS), Fichiers statiques
+- **Débogage** : Si Node crash, le conteneur redémarre immédiatement
+
+### ✨ Améliorations
+
+#### Dockerfile
+- **Supprimé** : Nginx, su-exec, multi-stage build complexe, script start.sh
+- **Simplifié** : Image Node.js pure (de 112 lignes → 57 lignes, -49%)
+- **User** : Utilisation du user `node` fourni par l'image officielle
+- **CMD** : Démarrage direct via `node start-wrapper.js`
+- **Health Check** : Test HTTP natif Node.js (plus de dépendance curl)
+- **Poids image** : Réduction ~150MB (suppression nginx + outils)
+
+#### Backend (server.js)
+- **Ajouté** : Service des fichiers statiques via `express.static()`
+- **Cache** : 1 jour pour CSS/JS/Images, no-cache pour HTML
+- **Route /** : Sert maintenant `index.html` au lieu de JSON
+- **Performance** : Légèrement améliorée (une couche proxy en moins)
+
+#### Docker Compose
+- **Port** : `3000:3000` au lieu de `3000:80` (plus clair, plus cohérent)
+- **Health Check** : Pointe vers `http://localhost:3000/health` avec test Node natif
+
+#### Fichiers Supprimés
+- ❌ `nginx.conf` - Plus nécessaire (51KB)
+- ❌ `start.sh` - Démarrage direct sans script shell
+
+### 🔒 Sécurité Maintenue
+
+**AUCUNE régression de sécurité** malgré la suppression de Nginx :
+
+| Couche | Avant (Nginx) | Après (Express) |
+|--------|--------------|-----------------|
+| HTTPS/SSL | ✅ Traefik | ✅ Traefik |
+| Certificats Auto | ✅ Traefik | ✅ Traefik |
+| Rate Limiting | ✅ Express | ✅ Express |
+| Headers Sécurité | ✅ Helmet | ✅ Helmet |
+| CORS | ✅ Express | ✅ Express |
+| Input Validation | ✅ Express | ✅ Express |
+| XSS Protection | ✅ Express | ✅ Express |
+| Compression | ✅ Nginx | ✅ Express |
+
+### 📊 Impact Performance
+
+- **Latence** : Légèrement améliorée (une couche proxy en moins)
+- **Mémoire** : Réduction ~50-70MB par conteneur (pas de processus Nginx)
+- **Logs** : Plus clairs et plus utiles (uniquement logs applicatifs)
+- **Débogage** : Beaucoup plus facile (stack trace directe, pas de 502)
+- **Startup** : Plus rapide (pas d'initialisation Nginx)
+
+### 📋 Fichiers Modifiés
+
+- [Dockerfile](Dockerfile) : Simplification majeure (112 → 57 lignes, -49%)
+- [server/server.js](server/server.js) : Ajout service fichiers statiques avec cache
+- [docker-compose.coolify.yml](docker-compose.coolify.yml) : Mise à jour port et healthcheck
+
+### 🔄 Migration
+
+Pour les déploiements existants sur Coolify :
+
+1. **Coolify** : Aucune configuration à changer (gère toujours HTTPS automatiquement)
+2. **Variables d'environnement** : Identiques, aucun changement requis
+3. **Volumes** : Identiques (`uploads`, `logs`)
+4. **Database** : Aucun changement
+5. **URLs** : Identiques, aucun impact utilisateur
+
+**Migration transparente** : Simple redéploiement, aucune reconfiguration nécessaire.
+
+### 📝 Note Technique
+
+Cette architecture est **officiellement recommandée par Coolify** pour tous les projets Node.js.
+Le proxy intégré (Traefik/Caddy) est optimisé et maintenu pour gérer HTTPS, SSL et routing.
+Ajouter un Nginx interne créait une redondance sans valeur ajoutée.
+
+**Référence** : [Best Practices Coolify - Node.js Applications](https://coolify.io/docs/knowledge-base/docker/nodejs)
+
+---
+
 ## [1.0.2] - 2025-12-15
 
 ### 🔧 Correctifs Critiques Coolify

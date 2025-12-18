@@ -41,7 +41,7 @@ services:
         NODE_ENV: production
     container_name: tirallarc-app-prod
     ports:
-      - "3000:80"  # Coolify reverse proxy gère 80/443, on expose seulement le port interne
+      - "3000:3000"  # Coolify reverse proxy (Traefik/Caddy) gère HTTPS et route vers ce port
     environment:
       NODE_ENV: production
       PORT: ${PORT:-3000}
@@ -71,7 +71,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })\""]
       interval: 30s
       timeout: 10s
       retries: 3
