@@ -37,13 +37,42 @@ const securityRoutes = require('./routes/security');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Faire confiance au proxy Nginx pour les headers X-Forwarded-*
+// Faire confiance au proxy (Traefik/Caddy de Coolify) pour les headers X-Forwarded-*
 app.set('trust proxy', true);
 
 // Initialisation de l'application
 async function initializeApp() {
     try {
         logger.info('Initialisation du serveur...');
+
+        // =================================================================
+        // 1. HEALTH CHECK (Avant toute sécurité pour Docker/Coolify)
+        // =================================================================
+        app.get('/health', async (req, res) => {
+            try {
+                // Timeout DB non bloquant (évite les boucles de reboot si DB traîne)
+                const dbPromise = database.query('SELECT 1');
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('DB timeout')), 2000)
+                );
+                await Promise.race([dbPromise, timeoutPromise]);
+
+                res.json({
+                    status: 'healthy',
+                    timestamp: new Date().toISOString(),
+                    version: '1.0.3',
+                    uptime: process.uptime()
+                });
+            } catch (error) {
+                // Renvoie 200 au début pour éviter les boucles de reboot si la DB traîne
+                logger.warn('Health check warn:', error.message);
+                res.status(200).json({
+                    status: 'starting',
+                    error: 'DB connecting...',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
 
         // Test de connexion à la base de données
         await database.init();
@@ -62,21 +91,17 @@ async function initializeApp() {
             origin: function (origin, callback) {
                 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(o => o.trim());
 
-                // Permettre les requêtes sans origine en développement
-                if (process.env.NODE_ENV === 'development' && !origin) {
+                // Autoriser sans origine (app mobile, curl local, même domaine)
+                if (!origin) {
                     return callback(null, true);
                 }
 
-                if (allowedOrigins.length === 0) {
-                    // Si aucune origine n'est configurée, refuser par défaut
-                    return callback(new Error('CORS not configured'), false);
+                // Si aucune origine configurée OU origine dans la liste
+                if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+                    return callback(null, true);
                 }
 
-                if (origin && allowedOrigins.includes(origin)) {
-                    callback(null, true);
-                } else {
-                    callback(new Error('Not allowed by CORS'), false);
-                }
+                callback(new Error('Not allowed by CORS'), false);
             },
             credentials: true,
             optionsSuccessStatus: 200,
@@ -94,20 +119,28 @@ async function initializeApp() {
         // Protection XSS intelligente : détecte les vraies attaques sans corrompre les données
         app.use(sanitizeInput);
 
-        // Servir les fichiers uploadés (photos incidents)
-        app.use('/uploads', express.static('uploads'));
+        // =================================================================
+        // 2. FICHIERS STATIQUES (Frontend + Uploads)
+        // =================================================================
 
-        // Servir les fichiers statiques du Frontend (dossier public créé dans le Dockerfile)
-        // maxAge définit le cache browser (1 jour), bon pour la performance
-        app.use(express.static(path.join(__dirname, 'public'), {
+        // Servir les fichiers uploadés (photos incidents)
+        app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+        // Servir les fichiers statiques du Frontend (dossier public)
+        // Express remplace Nginx ici. Cache 1 jour pour performance.
+        app.use(express.static(path.join(__dirname, '../public'), {
             maxAge: '1d',
             setHeaders: (res, filePath) => {
+                // Pas de cache pour HTML pour permettre mises à jour rapides
                 if (filePath.endsWith('.html')) {
-                    // Pas de cache pour les HTML pour que les mises à jour soient immédiates
                     res.setHeader('Cache-Control', 'no-cache');
                 }
             }
         }));
+
+        // =================================================================
+        // 3. ROUTES API
+        // =================================================================
 
         // Routes API v1 (versionnées)
         app.use('/api/v1/auth', authRoutes);
@@ -124,30 +157,6 @@ async function initializeApp() {
         app.use('/api/config', configRoutes);
         app.use('/api/email-config', emailConfigRoutes);
         app.use('/api/security', securityRoutes);
-
-        // Route de santé (health check)
-        app.get('/health', async (req, res) => {
-            try {
-                // Test de connexion base de données
-                await database.query('SELECT 1');
-
-                res.json({
-                    status: 'healthy',
-                    timestamp: new Date().toISOString(),
-                    version: process.env.npm_package_version || '1.0.0',
-                    environment: process.env.NODE_ENV || 'development',
-                    uptime: process.uptime()
-                });
-
-            } catch (error) {
-                logger.error('Health check échoué:', error);
-                res.status(503).json({
-                    status: 'unhealthy',
-                    timestamp: new Date().toISOString(),
-                    error: 'Database connection failed'
-                });
-            }
-        });
 
         // Route de métriques système (pour monitoring)
         app.get('/metrics', async (req, res) => {
@@ -194,9 +203,18 @@ async function initializeApp() {
             }
         });
 
+        // Route Dashboard Admin (SPA - Single Page Application)
+        app.get('/admin', (req, res) => {
+            res.sendFile(path.join(__dirname, '../public/admin/index.html'));
+        });
+
+        app.get('/admin/*', (req, res) => {
+            res.sendFile(path.join(__dirname, '../public/admin/index.html'));
+        });
+
         // Route par défaut - Servir la page d'accueil
         app.get('/', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+            res.sendFile(path.join(__dirname, '../public/index.html'));
         });
 
         // Documentation API simple
@@ -261,20 +279,27 @@ async function initializeApp() {
             });
         });
 
-        // Middleware de gestion d'erreurs 404
+        // Catch-all pour SPA (Single Page Application)
+        // Si requête HTML non API, renvoyer index.html (SPA routing)
+        // Sinon, 404 JSON
         app.use('*', (req, res) => {
-            logger.security('Route non trouvée', {
-                url: req.originalUrl,
-                method: req.method,
-                ip: req.ip,
-                userAgent: req.get('User-Agent')
-            });
+            // Si c'est une requête qui accepte HTML et que ce n'est pas une route API
+            if (req.accepts('html') && !req.originalUrl.startsWith('/api/')) {
+                res.sendFile(path.join(__dirname, '../public/index.html'));
+            } else {
+                logger.security('Route non trouvée', {
+                    url: req.originalUrl,
+                    method: req.method,
+                    ip: req.ip,
+                    userAgent: req.get('User-Agent')
+                });
 
-            res.status(404).json({
-                error: 'Route non trouvée',
-                message: `La route ${req.method} ${req.originalUrl} n'existe pas`,
-                documentation: '/api/docs'
-            });
+                res.status(404).json({
+                    error: 'Route non trouvée',
+                    message: `La route ${req.method} ${req.originalUrl} n'existe pas`,
+                    documentation: '/api/docs'
+                });
+            }
         });
 
         // Middleware de gestion d'erreurs globales
