@@ -95,7 +95,9 @@ async function startServer() {
         await initializeApp();
         process.stderr.write('[WRAPPER] ✅ Serveur démarré avec succès\n');
     } catch (err) {
-        // Utiliser process.stderr.write pour écriture synchrone (plus fiable que console.log)
+        // FORCE BRUTALE: Utiliser fs.writeFileSync sur /dev/stdout
+        const fs = require('fs');
+
         const errorDetails = [
             '\n========================================',
             '[WRAPPER] ❌ ERREUR DE DÉMARRAGE DU SERVEUR:',
@@ -114,12 +116,25 @@ async function startServer() {
 
         const fullError = errorDetails.join('\n');
 
-        // Écriture synchrone sur stderr ET stdout pour maximiser visibilité
+        // Triple écriture pour maximiser les chances
+        try {
+            // 1. fs.writeFileSync sur stdout (le plus fiable)
+            fs.writeFileSync(1, fullError, 'utf8');
+            fs.writeFileSync(2, fullError, 'utf8');
+        } catch (e) {
+            // Fallback
+        }
+
+        // 2. process.stderr/stdout.write
         process.stderr.write(fullError);
         process.stdout.write(fullError);
 
-        // Attendre pour laisser les buffers flusher
-        const waitForFlush = Date.now() + 100;
+        // 3. console.log comme dernier recours
+        console.log(fullError);
+        console.error(fullError);
+
+        // Attendre PLUS LONGTEMPS pour laisser les buffers flusher
+        const waitForFlush = Date.now() + 500;
         while (Date.now() < waitForFlush) { /* spin wait */ }
 
         process.exit(1);
