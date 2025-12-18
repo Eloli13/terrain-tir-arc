@@ -18,18 +18,10 @@ RUN npm ci --production --no-optional && \
     npm cache clean --force
 
 # Copie du code source du backend
-COPY server/ .
+COPY server/ ./server/
 
-# Copie du frontend dans un dossier 'public' pour qu'Express le serve
-COPY index.html ./public/
-COPY declaration.html ./public/
-COPY incident.html ./public/
-COPY manifest.json ./public/
-COPY sw.js ./public/
-COPY css/ ./public/css/
-COPY js/ ./public/js/
-COPY images/ ./public/images/
-COPY admin/ ./public/admin/
+# Copie du frontend (dossier public à la racine du projet)
+COPY public/ ./public/
 
 # Création des dossiers pour les données
 RUN mkdir -p uploads/incidents logs && \
@@ -54,4 +46,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 USER node
 
 # Démarrage direct de Node avec le wrapper pour capturer les erreurs
-CMD ["node", "start-wrapper.js"]
+CMD ["node", "server/start-wrapper.js"]
