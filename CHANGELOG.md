@@ -95,6 +95,18 @@ Internet → Coolify (Traefik) → Node.js/Express
 - [Dockerfile](Dockerfile) : Simplification majeure (112 → 57 lignes, -49%)
 - [server/server.js](server/server.js) : Ajout service fichiers statiques avec cache
 - [docker-compose.coolify.yml](docker-compose.coolify.yml) : Mise à jour port et healthcheck
+- [server/start-wrapper.js](server/start-wrapper.js) : Suppression appels `process.stdout.flush()` invalides
+
+### 🐛 Corrigé
+
+#### Déploiement Coolify - Erreur "process.stdout.flush is not a function" (Bug #13) ⚠️ CRITIQUE
+- **Erreur TypeError** : Container crash immédiatement au démarrage avec `process.stdout.flush is not a function`
+  - Le [start-wrapper.js](server/start-wrapper.js:44) appelait `process.stdout.flush()` qui n'existe pas en Node.js
+  - Cette méthode n'est pas disponible sur les streams stdout en Node.js
+  - Causait crash au démarrage : `TypeError: process.stdout.flush is not a function at startServer (/app/server/start-wrapper.js:44:24)`
+  - **Bug critique** : Le conteneur ne pouvait jamais démarrer, redémarrage en boucle
+  - Solution : Suppression des 3 appels à `process.stdout.flush()` (lignes 44, 49, 54)
+  - `process.stdout.write()` fait déjà un flush automatique, pas besoin d'appel explicite
 
 ### 🔄 Migration
 
