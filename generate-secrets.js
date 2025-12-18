@@ -45,7 +45,7 @@ function displaySecrets() {
         JWT_SECRET: generateSecret(48, 'base64'),
         JWT_REFRESH_SECRET: generateSecret(48, 'base64'),
         SESSION_SECRET: generateSecret(48, 'base64'),
-        ENCRYPTION_KEY: generateSecret(32, 'base64'), // 32 bytes pour AES-256
+        ENCRYPTION_KEY: generateSecret(32, 'hex'), // 32 bytes = 64 caractères hex pour AES-256
         DB_PASSWORD: generateSecret(32, 'alphanumeric')
     };
 
