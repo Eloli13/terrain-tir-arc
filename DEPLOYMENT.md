@@ -299,6 +299,496 @@ curl http://localhost/health
 
 ---
 
+## 🖥️ Déploiement sur Serveur Classique (Sans Coolify)
+
+Ce guide explique comment déployer l'application sur un serveur Linux classique (VPS, serveur dédié, cloud VM) sans utiliser Coolify.
+
+### Portabilité de l'application
+
+**Bonne nouvelle :** Le code de l'application est totalement portable et fonctionne de la même manière partout grâce à Docker.
+
+**La seule différence entre les déploiements :**
+- ✅ **Avec Coolify :** HTTPS automatique (Traefik + Let's Encrypt)
+- ⚙️ **Sans Coolify :** HTTPS manuel (Nginx/Traefik + Certbot)
+
+Tout le reste est identique : même code, même Dockerfile, mêmes variables d'environnement.
+
+### Architecture déployée
+
+```
+Internet → HTTPS (443) → Nginx/Traefik → HTTP (3000) → Docker App → PostgreSQL
+```
+
+### Prérequis serveur
+
+- **OS :** Ubuntu 20.04+ / Debian 11+ / CentOS 8+
+- **RAM :** 2 GB minimum (4 GB recommandé)
+- **Stockage :** 20 GB minimum
+- **Docker :** Version 20.10+
+- **Docker Compose :** Version 2.0+
+- **Domaine :** Nom de domaine pointant vers le serveur (pour HTTPS)
+- **Ports ouverts :**
+  - `80` (HTTP - redirection HTTPS)
+  - `443` (HTTPS)
+  - `22` (SSH)
+
+---
+
+### A. Installation de Docker
+
+Si Docker n'est pas déjà installé :
+
+```bash
+# Mise à jour du système
+sudo apt update && sudo apt upgrade -y
+
+# Installation de Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Ajouter l'utilisateur au groupe docker
+sudo usermod -aG docker $USER
+
+# Activer Docker au démarrage
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Vérification
+docker --version
+docker compose version
+```
+
+**Reconnectez-vous** après l'ajout au groupe docker pour appliquer les changements.
+
+---
+
+### B. Déploiement de l'application
+
+#### 1. Cloner le projet
+
+```bash
+cd /opt
+sudo git clone https://github.com/votre-repo/terrain-tir-arc.git
+cd terrain-tir-arc
+```
+
+#### 2. Générer les secrets
+
+```bash
+cd server
+npm install  # Installation temporaire pour generate-secrets.js
+node generate-secrets.js
+cd ..
+```
+
+**IMPORTANT :** Sauvegardez ces secrets dans un gestionnaire de mots de passe sécurisé !
+
+#### 3. Créer le fichier de production
+
+Créez `.env.production` à la racine du projet :
+
+```bash
+nano .env.production
+```
+
+Collez la configuration suivante avec vos secrets générés :
+
+```env
+# Base de données
+DB_NAME=terrain_tir_arc
+DB_USER=tir_arc_user
+DB_PASSWORD=VOTRE_DB_PASSWORD_ICI
+
+# Sécurité (secrets générés)
+JWT_SECRET=VOTRE_JWT_SECRET_ICI
+JWT_REFRESH_SECRET=VOTRE_JWT_REFRESH_SECRET_ICI
+SESSION_SECRET=VOTRE_SESSION_SECRET_ICI
+ENCRYPTION_KEY=VOTRE_ENCRYPTION_KEY_ICI
+
+# Configuration application
+NODE_ENV=production
+PORT=3000
+ALLOWED_ORIGINS=https://votre-domaine.com,https://www.votre-domaine.com
+LOG_LEVEL=warn
+
+# Sécurité
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+BCRYPT_ROUNDS=12
+
+# Email SMTP (optionnel)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_SECURE=
+SMTP_USER=
+SMTP_PASSWORD=
+```
+
+**Protégez le fichier :**
+
+```bash
+chmod 600 .env.production
+```
+
+#### 4. Lancer l'application
+
+```bash
+docker compose -f docker-compose.coolify.yml --env-file .env.production up -d
+```
+
+**Note :** Nous utilisons `docker-compose.coolify.yml` qui est universel (fonctionne avec ou sans Coolify).
+
+#### 5. Vérifier les services
+
+```bash
+docker compose -f docker-compose.coolify.yml ps
+```
+
+Résultat attendu :
+```
+NAME                    STATUS              PORTS
+tirallarc-app-prod     Up (healthy)        0.0.0.0:3000->3000/tcp
+tirallarc-db-prod      Up (healthy)        (internal)
+tirallarc-backup-prod  Up
+```
+
+#### 6. Test de santé local
+
+```bash
+curl http://localhost:3000/health
+```
+
+Résultat attendu :
+```json
+{"status":"healthy","timestamp":"...","version":"1.0.3"}
+```
+
+---
+
+### C. Configuration HTTPS
+
+À ce stade, l'application fonctionne en HTTP sur le port 3000. Il faut maintenant ajouter HTTPS.
+
+#### Option A : Nginx + Let's Encrypt (Recommandé)
+
+##### 1. Installer Nginx et Certbot
+
+```bash
+sudo apt install nginx certbot python3-certbot-nginx -y
+```
+
+##### 2. Créer la configuration Nginx
+
+```bash
+sudo nano /etc/nginx/sites-available/terrain-tir-arc
+```
+
+Collez cette configuration :
+
+```nginx
+# Redirection HTTP → HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name votre-domaine.com www.votre-domaine.com;
+
+    # Défi ACME pour Let's Encrypt
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    # Redirection vers HTTPS
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
+}
+
+# Configuration HTTPS
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name votre-domaine.com www.votre-domaine.com;
+
+    # Certificats SSL (générés par Certbot)
+    ssl_certificate /etc/letsencrypt/live/votre-domaine.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/votre-domaine.com/privkey.pem;
+
+    # Sécurité SSL moderne
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # En-têtes de sécurité
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Proxy vers l'application Docker
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+
+        # Headers pour préserver les informations client
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket support
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Taille maximale des uploads (photos incidents)
+    client_max_body_size 10M;
+
+    # Logs
+    access_log /var/log/nginx/terrain-tir-arc-access.log;
+    error_log /var/log/nginx/terrain-tir-arc-error.log;
+}
+```
+
+##### 3. Activer la configuration
+
+```bash
+# Créer le lien symbolique
+sudo ln -s /etc/nginx/sites-available/terrain-tir-arc /etc/nginx/sites-enabled/
+
+# Supprimer la config par défaut
+sudo rm /etc/nginx/sites-enabled/default
+
+# Tester la configuration
+sudo nginx -t
+
+# Recharger Nginx
+sudo systemctl reload nginx
+```
+
+##### 4. Générer le certificat SSL
+
+```bash
+sudo certbot --nginx -d votre-domaine.com -d www.votre-domaine.com
+```
+
+Suivez les instructions :
+- Entrez votre email pour les notifications d'expiration
+- Acceptez les conditions
+- Choisissez la redirection HTTPS automatique (recommandé)
+
+##### 5. Renouvellement automatique
+
+Certbot installe automatiquement un cron job pour renouveler les certificats. Vérifiez :
+
+```bash
+sudo systemctl status certbot.timer
+```
+
+Test manuel du renouvellement :
+
+```bash
+sudo certbot renew --dry-run
+```
+
+#### Option B : Traefik (Alternative moderne)
+
+Si vous préférez Traefik (comme Coolify), créez un fichier `docker-compose.traefik.yml` :
+
+```yaml
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=votre-email@example.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certificates:/letsencrypt
+    networks:
+      - web
+    restart: unless-stopped
+
+  app:
+    # ... configuration identique à docker-compose.coolify.yml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`votre-domaine.com`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+      - "traefik.http.services.app.loadbalancer.server.port=3000"
+    networks:
+      - web
+      - tirallarc-network-prod
+
+volumes:
+  traefik-certificates:
+
+networks:
+  web:
+    external: true
+```
+
+Démarrage :
+
+```bash
+docker network create web
+docker compose -f docker-compose.traefik.yml up -d
+```
+
+---
+
+### D. Vérification finale
+
+#### 1. Test HTTPS
+
+```bash
+curl https://votre-domaine.com/health
+```
+
+Résultat attendu :
+```json
+{"status":"healthy","timestamp":"...","version":"1.0.3"}
+```
+
+#### 2. Test du certificat SSL
+
+```bash
+openssl s_client -connect votre-domaine.com:443 -servername votre-domaine.com
+```
+
+Vérifiez :
+- ✅ `Verify return code: 0 (ok)`
+- ✅ Émetteur : Let's Encrypt
+- ✅ Dates de validité : 90 jours
+
+#### 3. Test des fonctionnalités
+
+- 🌐 Accès à l'interface : `https://votre-domaine.com`
+- 🔐 Connexion admin : `https://votre-domaine.com/admin`
+- 📊 Health check : `https://votre-domaine.com/health`
+- 📈 Métriques : `https://votre-domaine.com/metrics`
+- 📖 Documentation API : `https://votre-domaine.com/api/docs`
+
+---
+
+### Maintenance
+
+#### Consulter les logs
+
+```bash
+# Logs application
+docker compose -f docker-compose.coolify.yml logs -f app
+
+# Logs base de données
+docker compose -f docker-compose.coolify.yml logs -f postgres
+
+# Logs Nginx (si utilisé)
+sudo tail -f /var/log/nginx/terrain-tir-arc-error.log
+```
+
+#### Mise à jour de l'application
+
+```bash
+cd /opt/terrain-tir-arc
+
+# Pull dernière version
+git pull origin main
+
+# Rebuild et redémarrage
+docker compose -f docker-compose.coolify.yml --env-file .env.production up -d --build
+
+# Vérifier
+docker compose -f docker-compose.coolify.yml ps
+```
+
+#### Redémarrage des services
+
+```bash
+# Application Docker
+docker compose -f docker-compose.coolify.yml restart app
+
+# Nginx
+sudo systemctl restart nginx
+
+# Tout redémarrer
+docker compose -f docker-compose.coolify.yml restart
+```
+
+#### Backups
+
+Les backups automatiques quotidiens sont déjà configurés dans `docker-compose.coolify.yml`.
+
+**Backup manuel :**
+
+```bash
+# Base de données
+docker compose -f docker-compose.coolify.yml exec postgres \
+  pg_dump -U tir_arc_user terrain_tir_arc > backup_$(date +%Y%m%d).sql
+
+# Uploads
+tar -czf uploads_backup_$(date +%Y%m%d).tar.gz uploads/
+
+# Copier les backups hors du serveur
+scp backup_*.sql votre-backup-serveur:/backups/
+scp uploads_backup_*.tar.gz votre-backup-serveur:/backups/
+```
+
+---
+
+### Comparaison des approches
+
+| Critère | Coolify | Serveur Classique (Nginx) | Serveur Classique (Traefik) |
+|---------|---------|---------------------------|------------------------------|
+| **HTTPS automatique** | ✅ Oui | ⚠️ Manuel | ✅ Oui |
+| **Renouvellement SSL** | ✅ Automatique | ✅ Automatique (Certbot) | ✅ Automatique |
+| **Configuration initiale** | 🟢 Simple | 🟡 Moyenne | 🟡 Moyenne |
+| **Interface graphique** | ✅ Oui | ❌ Non | ⚠️ Dashboard disponible |
+| **Monitoring intégré** | ✅ Oui | ❌ Non (à ajouter) | ⚠️ Basique |
+| **Logs centralisés** | ✅ Oui | ❌ Non (à configurer) | ⚠️ Basique |
+| **Gestion des secrets** | ✅ UI intégrée | ⚠️ Fichier .env | ⚠️ Fichier .env |
+| **Déploiement Git auto** | ✅ Oui | ❌ Non (webhooks manuels) | ❌ Non |
+| **Coût** | 💰 Gratuit (self-hosted) | 💰 Gratuit | 💰 Gratuit |
+| **Complexité maintenance** | 🟢 Faible | 🟡 Moyenne | 🟡 Moyenne |
+
+**Recommandation :**
+- **Coolify** : Idéal pour la majorité des cas (simplicité + fonctionnalités)
+- **Nginx** : Pour les admins expérimentés ou intégration dans infra existante
+- **Traefik** : Pour ceux qui veulent une approche similaire à Coolify sans l'UI
+
+---
+
+### Résumé
+
+✅ **Le code de l'application est portable** - fonctionne identiquement partout
+✅ **Docker Compose universel** - même fichier `docker-compose.coolify.yml`
+✅ **Différence unique** - HTTPS (automatique avec Coolify, manuel sans)
+✅ **Sécurité identique** - Même configuration, mêmes secrets, mêmes protections
+✅ **Performance identique** - Reverse proxy → Node.js dans tous les cas
+
+**Vous pouvez déployer l'application sur n'importe quel serveur Linux avec Docker !**
+
+---
+
 ## 🔒 Configuration HTTPS/SSL
 
 ### Option 1: Avec Coolify (Automatique)
