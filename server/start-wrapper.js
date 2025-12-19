@@ -92,7 +92,9 @@ async function startServer() {
 
     try {
         process.stderr.write('[WRAPPER] Initialisation de l\'application...\n');
+        process.stderr.write('[WRAPPER] DEBUG: Appel de initializeApp()...\n');
         await initializeApp();
+        process.stderr.write('[WRAPPER] DEBUG: initializeApp() terminé avec succès\n');
         process.stderr.write('[WRAPPER] ✅ Serveur démarré avec succès\n');
     } catch (err) {
         // FORCE BRUTALE: Utiliser fs.writeFileSync sur /dev/stdout

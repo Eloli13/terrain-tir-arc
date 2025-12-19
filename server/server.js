@@ -75,7 +75,11 @@ async function initializeApp() {
         });
 
         // Test de connexion à la base de données
+        logger.info('DEBUG: Tentative de connexion à la base de données...');
+        process.stderr.write('[SERVER] DEBUG: Avant database.init()\n');
         await database.init();
+        logger.info('DEBUG: Connexion à la base de données réussie !');
+        process.stderr.write('[SERVER] DEBUG: Après database.init()\n');
 
         // Configuration des middlewares de sécurité (ordre important)
         app.use(sanitizeHeaders);

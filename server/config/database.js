@@ -9,9 +9,9 @@ class DatabaseManager {
             database: process.env.DB_NAME || 'terrain_tir_arc',
             user: process.env.DB_USER || 'tir_arc_user',
             password: process.env.DB_PASSWORD,
-            // SSL en production avec validation du certificat
-            // Pour désactiver la validation (non recommandé), définir DB_SSL_REJECT_UNAUTHORIZED=false
-            ssl: process.env.NODE_ENV === 'production' ? {
+            // SSL désactivé pour connexions Docker internes (sécurisé car réseau isolé)
+            // Pour activer SSL (ex: DB externe), définir DB_SSL=true
+            ssl: process.env.DB_SSL === 'true' ? {
                 rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
             } : false,
             max: 20, // Maximum de connexions dans le pool
