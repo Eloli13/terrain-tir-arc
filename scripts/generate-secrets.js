@@ -54,10 +54,12 @@ const fs = require('fs');
 const path = require('path');
 
 // Génération du fichier .env.production.generated
+// ⚠️ IMPORTANT: Ne générer QUE les variables utilisées dans docker-compose.coolify.yml
 const envContent = `# ===================================================================
 # SECRETS GÉNÉRÉS LE ${new Date().toISOString()}
 # ===================================================================
 # ⚠️  NE JAMAIS COMMITER CE FICHIER DANS GIT !
+# ⚠️  Ces variables sont utilisées par docker-compose.coolify.yml
 # ===================================================================
 
 # ========================================
@@ -81,41 +83,32 @@ DB_PASSWORD=${secrets['DB_PASSWORD']}
 # ========================================
 JWT_SECRET=${secrets['JWT_SECRET']}
 JWT_REFRESH_SECRET=${secrets['JWT_REFRESH_SECRET']}
-JWT_ACCESS_EXPIRATION=15m
-JWT_REFRESH_EXPIRATION=7d
 
 # ========================================
 # SESSION ET ENCRYPTION
 # ========================================
 SESSION_SECRET=${secrets['SESSION_SECRET']}
 ENCRYPTION_KEY=${secrets['ENCRYPTION_KEY']}
-COOKIE_SECURE=true
-COOKIE_SAMESITE=strict
 
 # ========================================
-# CORS ET DOMAINE
+# CORS
 # ========================================
 ALLOWED_ORIGINS=https://tiralarc.srv759477.hstgr.cloud
-FRONTEND_URL=https://tiralarc.srv759477.hstgr.cloud
 
 # ========================================
-# LOGS ET MONITORING
+# LOGS
 # ========================================
 LOG_LEVEL=info
-LOG_FORMAT=json
-SECURITY_LOGS_ENABLED=true
-LOG_RETENTION_DAYS=30
 
 # ========================================
 # RATE LIMITING
 # ========================================
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
-LOGIN_RATE_LIMIT_WINDOW_MS=900000
-LOGIN_RATE_LIMIT_MAX_ATTEMPTS=5
+BCRYPT_ROUNDS=12
 
 # ========================================
-# EMAIL (OPTIONNEL - à configurer plus tard)
+# EMAIL (OPTIONNEL - laisser vide pour l'instant)
 # ========================================
 SMTP_HOST=
 SMTP_PORT=
@@ -124,17 +117,11 @@ SMTP_USER=
 SMTP_PASSWORD=
 
 # ========================================
-# BACKUP
+# NOTES
 # ========================================
-BACKUP_ENABLED=true
-BACKUP_SCHEDULE=0 2 * * *
-BACKUP_RETENTION_DAYS=7
-
-# ========================================
-# MÉTRIQUES
-# ========================================
-METRICS_ENABLED=true
-METRICS_PORT=9090
+# BACKUP_RETENTION_DAYS: Configuré à 30 jours dans docker-compose.coolify.yml (ligne 109)
+# Le backup s'exécute automatiquement tous les jours à 2h du matin
+# Les backups sont conservés dans le volume app_backups_prod
 `;
 
 const outputPath = path.join(__dirname, '..', '.env.production.generated');
