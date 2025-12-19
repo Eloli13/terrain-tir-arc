@@ -94,6 +94,8 @@ ENCRYPTION_KEY=${secrets['ENCRYPTION_KEY']}
 # CORS
 # ========================================
 ALLOWED_ORIGINS=https://tiralarc.srv759477.hstgr.cloud
+CORS_ORIGIN=https://tiralarc.srv759477.hstgr.cloud
+FRONTEND_URL=https://tiralarc.srv759477.hstgr.cloud
 
 # ========================================
 # LOGS
