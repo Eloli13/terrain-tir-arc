@@ -13,6 +13,29 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 - Internationalisation (i18n)
 - Interface admin pour gestion des utilisateurs
 
+### 🐛 Corrigé
+
+#### Bug #25 - ValidationError express-rate-limit causant Gateway Timeout ⚠️ CRITIQUE
+- **Problème** : Crash silencieux au premier accès web
+  - Application démarrait avec succès (logs: "✅ Serveur démarré avec succès")
+  - Premier accès via Traefik → ValidationError de express-rate-limit
+  - Option `validate: { trustProxy: true, xForwardedForHeader: true }` obsolète dans express-rate-limit v7+
+  - Application crashait immédiatement → 504 Gateway Timeout
+  - Bug invisible car crash après démarrage réussi
+- **Solution** : Suppression de l'option `validate` dans [security.js:42-97](server/middleware/security.js#L42-L97)
+  - Trust proxy automatiquement hérité de `app.set('trust proxy', true)` dans server.js
+  - Rate limiter fonctionne désormais correctement avec Traefik/reverse proxy
+  - Application accessible via HTTPS sans crash
+
+### ✨ Ajouté
+
+#### Script reset-admin.js
+- Nouveau script pour réinitialiser le compte administrateur
+- Supprime tous les admins existants et recrée le compte par défaut
+- Utilise exactement la même méthode de hashing que database.js (16 bytes salt, 12 rounds bcrypt)
+- Vérification post-création pour confirmer le compte
+- Usage: `docker exec <container> node server/scripts/reset-admin.js`
+
 ---
 
 ## [1.0.4] - 2025-12-18
