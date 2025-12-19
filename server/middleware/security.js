@@ -15,12 +15,11 @@ const helmetConfig = {
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            // Utilisation de nonces + unsafe-inline pour compatibilité
+            // Utilisation de unsafe-inline (nonces retirés car ils désactivent unsafe-inline)
             styleSrc: [
                 "'self'",
                 "https://fonts.googleapis.com",
-                "'unsafe-inline'",  // Nécessaire pour les styles inline dans error-handler.js et validators.js
-                (req, res) => `'nonce-${res.locals.cspNonce}'`
+                "'unsafe-inline'"  // Nécessaire pour les styles inline dans error-handler.js et validators.js
             ],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             scriptSrc: [
