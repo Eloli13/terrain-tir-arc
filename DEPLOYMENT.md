@@ -433,15 +433,15 @@ chmod 600 .env.production
 #### 4. Lancer l'application
 
 ```bash
-docker compose -f docker-compose.coolify.yml --env-file .env.production up -d
+docker compose -f docker-compose.yaml --env-file .env.production up -d
 ```
 
-**Note :** Nous utilisons `docker-compose.coolify.yml` qui est universel (fonctionne avec ou sans Coolify).
+**Note :** Nous utilisons `docker-compose.yaml` qui est universel (fonctionne avec ou sans Coolify).
 
 #### 5. Vérifier les services
 
 ```bash
-docker compose -f docker-compose.coolify.yml ps
+docker compose -f docker-compose.yaml ps
 ```
 
 Résultat attendu :
@@ -629,7 +629,7 @@ services:
     restart: unless-stopped
 
   app:
-    # ... configuration identique à docker-compose.coolify.yml
+    # ... configuration identique à docker-compose.yaml
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`votre-domaine.com`)"
@@ -697,10 +697,10 @@ Vérifiez :
 
 ```bash
 # Logs application
-docker compose -f docker-compose.coolify.yml logs -f app
+docker compose -f docker-compose.yaml logs -f app
 
 # Logs base de données
-docker compose -f docker-compose.coolify.yml logs -f postgres
+docker compose -f docker-compose.yaml logs -f postgres
 
 # Logs Nginx (si utilisé)
 sudo tail -f /var/log/nginx/terrain-tir-arc-error.log
@@ -715,34 +715,34 @@ cd /opt/terrain-tir-arc
 git pull origin main
 
 # Rebuild et redémarrage
-docker compose -f docker-compose.coolify.yml --env-file .env.production up -d --build
+docker compose -f docker-compose.yaml --env-file .env.production up -d --build
 
 # Vérifier
-docker compose -f docker-compose.coolify.yml ps
+docker compose -f docker-compose.yaml ps
 ```
 
 #### Redémarrage des services
 
 ```bash
 # Application Docker
-docker compose -f docker-compose.coolify.yml restart app
+docker compose -f docker-compose.yaml restart app
 
 # Nginx
 sudo systemctl restart nginx
 
 # Tout redémarrer
-docker compose -f docker-compose.coolify.yml restart
+docker compose -f docker-compose.yaml restart
 ```
 
 #### Backups
 
-Les backups automatiques quotidiens sont déjà configurés dans `docker-compose.coolify.yml`.
+Les backups automatiques quotidiens sont déjà configurés dans `docker-compose.yaml`.
 
 **Backup manuel :**
 
 ```bash
 # Base de données
-docker compose -f docker-compose.coolify.yml exec postgres \
+docker compose -f docker-compose.yaml exec postgres \
   pg_dump -U tir_arc_user terrain_tir_arc > backup_$(date +%Y%m%d).sql
 
 # Uploads
@@ -780,7 +780,7 @@ scp uploads_backup_*.tar.gz votre-backup-serveur:/backups/
 ### Résumé
 
 ✅ **Le code de l'application est portable** - fonctionne identiquement partout
-✅ **Docker Compose universel** - même fichier `docker-compose.coolify.yml`
+✅ **Docker Compose universel** - même fichier `docker-compose.yaml`
 ✅ **Différence unique** - HTTPS (automatique avec Coolify, manuel sans)
 ✅ **Sécurité identique** - Même configuration, mêmes secrets, mêmes protections
 ✅ **Performance identique** - Reverse proxy → Node.js dans tous les cas

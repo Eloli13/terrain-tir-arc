@@ -78,7 +78,7 @@ DB_PASSWORD=secure_db_password_123456789
    ```
    Repository URL: https://github.com/Eloli13/terrain-tir-arc
    Branch: main
-   Docker Compose File: docker-compose.coolify.yml
+   Docker Compose File: docker-compose.yaml
    ```
 
 3. **Build Configuration :**
@@ -86,7 +86,7 @@ DB_PASSWORD=secure_db_password_123456789
    - **Base Directory :** `.` (racine)
    - **Dockerfile :** `Dockerfile` (auto-détecté)
 
-**📌 Note importante :** Nous utilisons `docker-compose.coolify.yml` et non `docker-compose.prod.yml`. Le fichier Coolify est optimisé pour cette plateforme :
+**📌 Note importante :** Nous utilisons `docker-compose.yaml` et non `docker-compose.prod.yml`. Le fichier Coolify est optimisé pour cette plateforme :
 - ✅ Pas de référence à une image Docker Hub (construction locale uniquement)
 - ✅ Configuration simplifiée pour Coolify
 - ✅ Service de backup avec planification quotidienne
@@ -412,12 +412,12 @@ WARNING: Some service image(s) must be built from source
 **Cause :** Le fichier Docker Compose contenait une directive `image:` qui faisait que Coolify essayait de télécharger l'image depuis Docker Hub au lieu de la construire localement.
 
 **Solution :**
-- ✅ **Déjà corrigé** dans `docker-compose.coolify.yml` (v1.0.2+)
+- ✅ **Déjà corrigé** dans `docker-compose.yaml` (v1.0.2+)
 - La ligne `image: tirallarc-app:${APP_VERSION:-latest}` a été supprimée
 - Coolify construit maintenant l'image directement depuis le Dockerfile
 
 **Si vous avez toujours cette erreur :**
-1. Vérifiez que vous utilisez bien `docker-compose.coolify.yml`
+1. Vérifiez que vous utilisez bien `docker-compose.yaml`
 2. Assurez-vous que votre repository GitHub est à jour (git pull)
 3. Dans Coolify : **Force Rebuild** depuis l'interface
 
@@ -464,7 +464,7 @@ failed to solve: failed to read dockerfile: open Dockerfile: no such file or dir
 
 4. **Option nucléaire (si rien ne marche) :**
    - Supprimez complètement la resource dans Coolify
-   - Recréez-la depuis zéro avec `docker-compose.coolify.yml`
+   - Recréez-la depuis zéro avec `docker-compose.yaml`
    - Cela force Coolify à tout nettoyer et repartir de zéro
 
 **Indicateur de succès dans les logs :**
@@ -507,16 +507,16 @@ driver failed programming external connectivity on endpoint app-xxx:
 Bind for 0.0.0.0:80 failed: port is already allocated
 ```
 
-**Cause :** Coolify utilise **Traefik** comme reverse proxy intégré qui occupe déjà les ports 80 et 443 sur l'hôte. Le `docker-compose.coolify.yml` essayait d'exposer ces ports directement, créant un conflit.
+**Cause :** Coolify utilise **Traefik** comme reverse proxy intégré qui occupe déjà les ports 80 et 443 sur l'hôte. Le `docker-compose.yaml` essayait d'exposer ces ports directement, créant un conflit.
 
 **Solution :**
-- ✅ **Déjà corrigé** dans `docker-compose.coolify.yml` (v1.0.2+)
+- ✅ **Déjà corrigé** dans `docker-compose.yaml` (v1.0.2+)
 - Ports changés de `"80:80"` et `"443:443"` vers `"3000:80"`
 - L'application expose maintenant le port **3000** en interne
 - **Traefik** gère automatiquement le routing HTTPS (80/443 → 3000)
 
 **⚠️ IMPORTANT pour Coolify :**
-- Ne **JAMAIS** exposer les ports 80 ou 443 directement dans `docker-compose.coolify.yml`
+- Ne **JAMAIS** exposer les ports 80 ou 443 directement dans `docker-compose.yaml`
 - Traefik se charge du SSL/TLS et du routing automatiquement
 - Exposer uniquement un port interne (ex: 3000, 8080, etc.)
 - Coolify détecte automatiquement le port et configure Traefik
@@ -529,7 +529,7 @@ Internet (80/443) → Traefik (reverse proxy) → Votre App (port 3000)
 ```
 
 **Si vous avez toujours cette erreur :**
-1. Vérifiez le mapping de ports dans `docker-compose.coolify.yml` : doit être `"3000:80"` ou similaire
+1. Vérifiez le mapping de ports dans `docker-compose.yaml` : doit être `"3000:80"` ou similaire
 2. Force Rebuild dans Coolify
 3. Assurez-vous qu'aucun autre service n'utilise le port 80/443 sur l'hôte
 

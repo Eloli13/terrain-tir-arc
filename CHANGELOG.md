@@ -228,7 +228,7 @@ Internet → Coolify (Traefik) → Node.js/Express
 
 - [Dockerfile](Dockerfile) : Simplification majeure (112 → 57 lignes, -49%)
 - [server/server.js](server/server.js) : Ajout service fichiers statiques avec cache
-- [docker-compose.coolify.yml](docker-compose.coolify.yml) : Mise à jour port et healthcheck
+- [docker-compose.yaml](docker-compose.yaml) : Mise à jour port et healthcheck
 - [server/start-wrapper.js](server/start-wrapper.js) : Suppression appels `process.stdout.flush()` invalides
 
 ### 🐛 Corrigé
@@ -273,7 +273,7 @@ Cette version corrige **cinq problèmes bloquants** le déploiement sur Coolify.
 ### 🐛 Corrigé
 
 #### Déploiement Coolify - Erreur "pull access denied" (Bug #1)
-- **Erreur "pull access denied"** : Suppression de la directive `image:` dans [docker-compose.coolify.yml](docker-compose.coolify.yml:43)
+- **Erreur "pull access denied"** : Suppression de la directive `image:` dans [docker-compose.yaml](docker-compose.yaml:43)
   - Coolify essayait de télécharger `tirallarc-app:latest` depuis Docker Hub
   - L'image n'existe pas publiquement, causant l'échec du déploiement
   - Solution : Construction locale de l'image uniquement via le `build:`
@@ -295,7 +295,7 @@ Cette version corrige **cinq problèmes bloquants** le déploiement sur Coolify.
 
 #### Déploiement Coolify - Erreur "port already allocated" (Bug #4)
 - **Erreur "Bind for 0.0.0.0:80 failed"** : Conflit de port avec le reverse proxy Coolify
-  - Le [docker-compose.coolify.yml](docker-compose.coolify.yml:44-45) exposait les ports 80 et 443 directement
+  - Le [docker-compose.yaml](docker-compose.yaml:44-45) exposait les ports 80 et 443 directement
   - Coolify utilise **Traefik** comme reverse proxy qui occupe déjà les ports 80/443
   - Causait l'erreur : `failed to set up container networking: Bind for 0.0.0.0:80 failed: port is already allocated`
   - Solution : Exposition du port interne `3000:80` au lieu de `80:80` et `443:443`, Traefik gère le routing HTTPS
@@ -310,7 +310,7 @@ Cette version corrige **cinq problèmes bloquants** le déploiement sur Coolify.
 
 #### Documentation
 - **Guide Coolify** : Mise à jour de [COOLIFY_SETUP.md](COOLIFY_SETUP.md)
-  - Référence correcte à `docker-compose.coolify.yml` au lieu de `docker-compose.prod.yml`
+  - Référence correcte à `docker-compose.yaml` au lieu de `docker-compose.prod.yml`
   - Ajout d'une note explicative sur les différences entre les fichiers
   - Nouvelle section troubleshooting pour les erreurs Coolify
 
@@ -332,7 +332,7 @@ Cette version corrige **cinq problèmes bloquants** le déploiement sur Coolify.
 - `.dockerignore` : Suppression lignes `Dockerfile` et `package-lock.json` (bugs critiques)
 - `.gitignore` : Suppression ligne `package-lock.json` (bug critique)
 - `server/package-lock.json` : Ajout au repo (229KB)
-- `docker-compose.coolify.yml` : Suppression ligne `image:` + changement ports `3000:80` (Traefik compatibility)
+- `docker-compose.yaml` : Suppression ligne `image:` + changement ports `3000:80` (Traefik compatibility)
 - `nginx.conf` : Correction chemin PID `/var/run/nginx.pid` (Alpine Linux compatibility)
 - `COOLIFY_SETUP.md` : Correction référence fichier + troubleshooting
 

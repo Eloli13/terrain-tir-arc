@@ -154,7 +154,7 @@ ports:
 - Ces configurations sont pour **développement local uniquement**
 - Ne **JAMAIS** utiliser ces secrets en production
 - Ne **JAMAIS** commiter les fichiers `.env.local` ou `.env.production`
-- En production, utiliser `docker-compose.coolify.yml` avec secrets forts
+- En production, utiliser `docker-compose.yaml` avec secrets forts
 
 ## Documentation
 

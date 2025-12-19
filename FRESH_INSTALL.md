@@ -21,7 +21,7 @@ Dans l'interface Coolify, arrêtez l'application ou via SSH :
 docker ps | grep tirallarc
 
 # Arrêter tous les conteneurs
-docker-compose -f /path/to/docker-compose.coolify.yml down
+docker-compose -f /path/to/docker-compose.yaml down
 ```
 
 ### Étape 3 : Supprimer TOUS les volumes
@@ -261,7 +261,7 @@ Conservez une copie sécurisée de vos secrets (JWT_SECRET, ENCRYPTION_KEY, DB_P
 
 ### 3. Activer les backups automatiques
 
-Les backups sont configurés dans `docker-compose.coolify.yml` et s'exécutent automatiquement tous les jours.
+Les backups sont configurés dans `docker-compose.yaml` et s'exécutent automatiquement tous les jours.
 
 Pour vérifier :
 ```bash

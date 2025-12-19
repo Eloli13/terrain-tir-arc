@@ -41,11 +41,11 @@ print_step() {
 # Étape 1 : Arrêter les conteneurs
 print_step "Étape 1/4 : Arrêt des conteneurs"
 
-if [ -f "docker-compose.coolify.yml" ]; then
+if [ -f "docker-compose.yaml" ]; then
     echo "Arrêt via docker-compose..."
-    docker-compose -f docker-compose.coolify.yml down || echo "⚠️  Aucun conteneur à arrêter"
+    docker-compose -f docker-compose.yaml down || echo "⚠️  Aucun conteneur à arrêter"
 else
-    echo "⚠️  docker-compose.coolify.yml non trouvé, arrêt manuel..."
+    echo "⚠️  docker-compose.yaml non trouvé, arrêt manuel..."
 
     # Arrêter les conteneurs individuellement
     docker ps -a --filter "name=tirallarc" --format "{{.ID}}" | while read container_id; do
