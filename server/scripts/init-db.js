@@ -16,7 +16,7 @@ const logger = require('../utils/logger');
 const DEFAULT_ADMIN = {
     username: 'admin',
     email: 'admin@localhost',
-    password: 'Admin123!Change' // DOIT être changé au premier login
+    password: 'changez-moi-en-production' // DOIT être changé au premier login
 };
 
 async function createDefaultAdmin() {
@@ -31,8 +31,8 @@ async function createDefaultAdmin() {
             return;
         }
 
-        // Générer le sel et hasher le mot de passe
-        const salt = crypto.randomBytes(32).toString('hex');
+        // Générer le sel et hasher le mot de passe (même méthode que database.js)
+        const salt = crypto.randomBytes(16).toString('hex');
         const saltedPassword = DEFAULT_ADMIN.password + salt;
         const passwordHash = await bcrypt.hash(saltedPassword, 12);
 
