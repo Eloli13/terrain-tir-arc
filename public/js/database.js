@@ -4,12 +4,10 @@ class DatabaseManager {
     static VERSION = 1;
     // Configuration de l'URL de l'API
     // Développement local: port 80 (Docker avec Nginx)
-    // Production (Coolify): port 3000 via reverse proxy
+    // Production (Coolify): utilise window.location.origin (Traefik gère le routing)
     static API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost/api'  // Local: port 80
-        : window.location.hostname.includes('hstgr.cloud')
-            ? `${window.location.protocol}//${window.location.hostname}:3000/api`  // Production Coolify: port 3000
-            : '/api';  // Autre: utiliser le même domaine
+        : `${window.location.origin}/api`;  // Production: utilise l'origine complète (protocole + domaine)
 
     static authToken = null;
     static useAPI = null; // null = pas encore testé, true = API disponible, false = localStorage uniquement

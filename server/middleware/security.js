@@ -15,15 +15,17 @@ const helmetConfig = {
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            // Utilisation de nonces au lieu de 'unsafe-inline' pour une meilleure sécurité
+            // Utilisation de nonces + unsafe-inline pour compatibilité
             styleSrc: [
                 "'self'",
                 "https://fonts.googleapis.com",
+                "'unsafe-inline'",  // Nécessaire pour les styles inline dans error-handler.js et validators.js
                 (req, res) => `'nonce-${res.locals.cspNonce}'`
             ],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             scriptSrc: [
                 "'self'",
+                "https://cdn.jsdelivr.net",  // CDN pour JSQr (scanner QR)
                 (req, res) => `'nonce-${res.locals.cspNonce}'`
             ],
             imgSrc: ["'self'", "data:", "https:"],
