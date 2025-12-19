@@ -3,7 +3,7 @@ const logger = require('../utils/logger');
 
 class DatabaseManager {
     constructor() {
-        this.pool = new Pool({
+        const dbConfig = {
             host: process.env.DB_HOST || 'localhost',
             port: process.env.DB_PORT || 5432,
             database: process.env.DB_NAME || 'terrain_tir_arc',
@@ -17,7 +17,11 @@ class DatabaseManager {
             max: 20, // Maximum de connexions dans le pool
             idleTimeoutMillis: 30000, // Fermer les connexions inactives après 30s
             connectionTimeoutMillis: 2000, // Timeout de connexion 2s
-        });
+        };
+
+        process.stderr.write(`[DATABASE] Config: host=${dbConfig.host}, port=${dbConfig.port}, database=${dbConfig.database}, user=${dbConfig.user}, ssl=${dbConfig.ssl}\n`);
+
+        this.pool = new Pool(dbConfig);
 
         this.pool.on('error', (err) => {
             logger.error('Erreur inattendue sur une connexion de base de données inactive', err);
@@ -28,7 +32,9 @@ class DatabaseManager {
     async init() {
         try {
             // Tester la connexion
+            process.stderr.write('[DATABASE] DEBUG: Tentative de connexion au pool...\n');
             const client = await this.pool.connect();
+            process.stderr.write('[DATABASE] DEBUG: Client connecté au pool avec succès\n');
             logger.info('Connexion à la base de données établie');
 
             // Créer les tables si elles n'existent pas
