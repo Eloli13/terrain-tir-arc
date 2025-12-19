@@ -36,6 +36,7 @@ const securityRoutes = require('./routes/security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Faire confiance au proxy (Traefik/Caddy de Coolify) pour les headers X-Forwarded-*
 app.set('trust proxy', true);
@@ -337,9 +338,10 @@ async function initializeApp() {
         websocketServer.initialize(server);
 
         // Démarrage du serveur
-        server.listen(PORT, () => {
-            logger.info(`Serveur démarré sur le port ${PORT}`, {
+        server.listen(PORT, HOST, () => {
+            logger.info(`Serveur démarré sur ${HOST}:${PORT}`, {
                 environment: process.env.NODE_ENV || 'development',
+                host: HOST,
                 port: PORT,
                 cors: process.env.ALLOWED_ORIGINS || 'Non configuré'
             });
