@@ -48,12 +48,7 @@ const globalRateLimit = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Trust proxy est géré au niveau de Express (app.set('trust proxy', true))
-    // Pas besoin de désactiver validate avec cette configuration
-    validate: {
-        trustProxy: true,
-        xForwardedForHeader: true
-    },
+    // Trust proxy automatiquement hérité de app.set('trust proxy', true)
     handler: (req, res) => {
         logger.security('Rate limit dépassé', {
             ip: req.ip,
@@ -77,11 +72,7 @@ const authRateLimit = rateLimit({
         error: 'Trop de tentatives de connexion, veuillez réessayer dans 15 minutes.',
         retryAfter: 15 * 60
     },
-    // Trust proxy est géré au niveau de Express (app.set('trust proxy', true))
-    validate: {
-        trustProxy: true,
-        xForwardedForHeader: true
-    },
+    // Trust proxy automatiquement hérité de app.set('trust proxy', true)
     handler: (req, res) => {
         logger.security('Tentatives de connexion excessives', {
             ip: req.ip,
