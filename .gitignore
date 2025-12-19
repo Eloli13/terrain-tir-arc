@@ -11,6 +11,7 @@ admin/node_modules/
 .env
 .env.local
 .env.production
+.env.production.generated
 .env.test
 server/.env
 
