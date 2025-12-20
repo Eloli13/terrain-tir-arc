@@ -1,5 +1,15 @@
 # Déploiement Local - Gestion Site Tir à l'Arc
 
+> **⚠️ ATTENTION - DOCUMENTATION PARTIELLEMENT OBSOLÈTE**
+>
+> Ce guide contient des références à `database.sql` qui est un fichier **OBSOLÈTE et DANGEREUX**.
+>
+> **👉 Pour un déploiement production, utilisez:** [DEPLOIEMENT_PRODUCTION.md](../../../DEPLOIEMENT_PRODUCTION.md)
+>
+> Pour le développement local, ce guide reste valable mais ignorez toutes les références à `database.sql`.
+
+---
+
 **Mode développement pour tester et modifier l'application en local**
 
 ---

@@ -1,5 +1,13 @@
 # Démarrage Rapide - Application Locale
 
+> **⚠️ ATTENTION - Si vous cherchez un guide de déploiement production**
+>
+> **👉 Consultez:** [DEPLOIEMENT_PRODUCTION.md](../../DEPLOIEMENT_PRODUCTION.md)
+>
+> Ce fichier concerne uniquement le développement local.
+
+---
+
 ## Application démarrée avec succès !
 
 ### URLs d'accès

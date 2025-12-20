@@ -1,5 +1,15 @@
 # Déploiement Complet avec Coolify
 
+> **⚠️ ATTENTION - DOCUMENTATION OBSOLÈTE**
+>
+> Ce guide contient des références à `database.sql` qui est un fichier **OBSOLÈTE et DANGEREUX**.
+>
+> **👉 Utilisez plutôt le guide officiel:** [DEPLOIEMENT_PRODUCTION.md](../../../DEPLOIEMENT_PRODUCTION.md)
+>
+> Ce fichier est conservé uniquement pour référence historique.
+
+---
+
 **Application : Gestion Site Tir à l'Arc (Frontend + Backend)**
 **Docker Hub : eloli/gestion_site_arc**
 **Domaine : srv759477.hstgr.cloud**

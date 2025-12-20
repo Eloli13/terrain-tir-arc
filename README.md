@@ -378,7 +378,7 @@ terrain-tir-arc/
 ├── .env.production              # Secrets production (gitignored)
 ├── .gitignore
 │
-├── DEPLOYMENT.md                # Guide déploiement complet
+├── DEPLOIEMENT_PRODUCTION.md    # 🚀 Guide déploiement production (OFFICIEL)
 ├── CONTRIBUTING.md              # Guide contribution
 ├── CHANGELOG.md                 # Historique versions
 ├── LICENSE                      # Licence MIT
@@ -603,9 +603,10 @@ Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](CONTRIBUTING
 
 ### Documentation
 
-- 📖 [Guide de déploiement](DEPLOYMENT.md)
+- 🚀 **[Guide de déploiement PRODUCTION](DEPLOIEMENT_PRODUCTION.md)** - **MÉTHODE OFFICIELLE**
 - 🛠️ [Guide de contribution](CONTRIBUTING.md)
 - 📝 [Changelog](CHANGELOG.md)
+- 📚 [Documentation complète](docs/) (guides historiques/référence)
 
 ### FAQ
 

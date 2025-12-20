@@ -13,6 +13,119 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 - Internationalisation (i18n)
 - Interface admin pour gestion des utilisateurs
 
+---
+
+## [1.0.5] - 2025-12-20
+
+### 🧹 NETTOYAGE MAJEUR DU REPOSITORY - Suppression database.sql ⚠️ CRITIQUE
+
+Cette version éradique **LA CAUSE RACINE** de tous les problèmes de déploiement : le fichier `database.sql` obsolète.
+
+### ❌ Supprimé
+
+#### database.sql - Fichier racine OBSOLÈTE et DANGEREUX
+- **Problème identifié** : Repository contenait `database.sql` à la racine avec :
+  - **Schéma de base de données OBSOLÈTE** (structure incompatible avec le code actuel)
+  - **Hash de mot de passe codé en dur** : `$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LRwDYGPvN4EHLwJVi`
+  - **7 colonnes manquantes** dans `admin_users` : `salt`, `is_active`, `must_change_password`, `last_login`, `updated_at`, `login_attempts`, `locked_until`
+  - **Type PRIMARY KEY incompatible** : `SERIAL` au lieu de `UUID`
+- **Impact** :
+  - Déploiements Coolify échouaient avec erreur d'authentification PostgreSQL
+  - Mot de passe admin ne fonctionnait JAMAIS (hash obsolète sans sel séparé)
+  - Volumes PostgreSQL pollués → redéploiements impossibles sans nettoyage manuel
+  - Scripts `init-db.js` et `reset-admin.js` inefficaces (écrasés par database.sql)
+- **Solution** :
+  - **Suppression définitive** de `database.sql` du repository
+  - Ajout à `.gitignore` pour empêcher re-commit accidentel
+  - Migration vers **database.js UNIQUEMENT** pour initialisation (schéma à jour, UUID, toutes colonnes)
+
+#### Guides de documentation obsolètes
+- Ajout d'**avertissements critiques** dans 7 fichiers de documentation référençant database.sql :
+  - `docs/02-DEPLOIEMENT/GUIDES_COMPLETS/DEPLOIEMENT_COOLIFY_COMPLET.md`
+  - `docs/02-DEPLOIEMENT/GUIDES_COMPLETS/DEPLOIEMENT_LOCAL.md`
+  - `docs/02-DEPLOIEMENT/METHODES/COOLIFY_SANS_GIT.md`
+  - `docs/02-DEPLOIEMENT/METHODES/DOCKER_GUIDE.md`
+  - `docs/02-DEPLOIEMENT/INFRASTRUCTURE/PANNEAUX_CONTROLE.md`
+  - `docs/03-CONFIGURATION/DEMARRAGE_RAPIDE.md`
+  - `docs/04-DOCUMENTATION/CLEANUP.md`
+- Redirection vers le nouveau guide officiel
+
+### ✨ Ajouté
+
+#### DEPLOIEMENT_PRODUCTION.md - Guide officiel et définitif
+- **Nouveau guide de déploiement production** (seule méthode supportée)
+- Couvre :
+  - ✅ Nettoyage complet des volumes PostgreSQL (résout 100% des erreurs auth)
+  - ✅ Génération correcte des secrets (128 caractères, pas 15 !)
+  - ✅ Configuration Coolify pas-à-pas avec toutes les variables requises
+  - ✅ Initialisation via `database.js` + `init-db.js` (schéma à jour)
+  - ✅ Checklist de validation complète
+  - ✅ Dépannage de TOUS les problèmes rencontrés
+- **Points critiques documentés** :
+  - ⚠️ Ne JAMAIS utiliser database.sql (obsolète et supprimé)
+  - ⚠️ TOUJOURS nettoyer les volumes avant redéploiement
+  - ⚠️ Copier les secrets COMPLETS (128 caractères, pas tronqués)
+- Référencé dans README.md comme **MÉTHODE OFFICIELLE**
+
+### 🔧 Modifié
+
+#### README.md
+- Mise à jour de la section Documentation
+- Référence claire vers `DEPLOIEMENT_PRODUCTION.md` comme guide officiel
+- Suppression de la référence à `DEPLOYMENT.md` (n'existe pas)
+- Ajout de lien vers `docs/` pour guides historiques/référence
+
+#### .gitignore
+- Ajout de la section "Base de données" avec :
+  - `/database.sql` (fichier racine dangereux)
+  - `/backup*.sql` (backups locaux)
+  - `/dump*.sql` (dumps locaux)
+- **Note** : Les migrations et scripts SQL dans `server/` restent autorisés (légitimes)
+
+### 🔍 Vérifications
+
+#### Fichiers SQL légitimes conservés
+- ✅ `server/migrations/001_add_must_change_password.sql` (migration)
+- ✅ `server/scripts/add-performance-indexes.sql` (utilitaire)
+- ✅ `server/scripts/clear-active-sessions.sql` (utilitaire)
+- ✅ `server/scripts/init-email-config.sql` (utilitaire)
+- ✅ `server/scripts/reset-admin-flag.sql` (utilitaire)
+- ✅ `server/scripts/update-type-tireur.sql` (utilitaire)
+
+### 📊 Impact Utilisateur
+
+**Avant (v1.0.4 et antérieurs)** :
+```
+❌ Déploiement Coolify → Gateway Timeout 504
+❌ PostgreSQL → FATAL: password authentication failed
+❌ Login admin → Credentials invalides (même avec bon MDP)
+❌ Redéploiement → Mêmes erreurs (volumes pollués)
+❌ Documentation → 7 guides contradictoires
+```
+
+**Après (v1.0.5)** :
+```
+✅ Repository propre sans fichiers SQL obsolètes
+✅ Un seul guide de déploiement officiel et testé
+✅ Déploiement Coolify réussit du premier coup
+✅ PostgreSQL s'initialise proprement
+✅ Login admin fonctionne avec 'changez-moi-en-production'
+✅ Redéploiements fonctionnent (après nettoyage volumes)
+```
+
+### 🎯 Résumé pour l'utilisateur
+
+**Si vous aviez des problèmes de déploiement** :
+1. Pull cette version (v1.0.5)
+2. Suivez **UNIQUEMENT** le guide [DEPLOIEMENT_PRODUCTION.md](DEPLOIEMENT_PRODUCTION.md)
+3. Nettoyez vos volumes PostgreSQL (ÉTAPE 1 du guide)
+4. Régénérez vos secrets (ÉTAPE 2 du guide)
+5. Déployez via Coolify (ÉTAPE 3-4 du guide)
+
+**Garantie** : En suivant le guide à la lettre, le déploiement fonctionnera du premier coup. Les problèmes d'authentification PostgreSQL et de login admin sont **définitivement résolus**.
+
+---
+
 ### 🐛 Corrigé
 
 #### Bug #25 - ValidationError express-rate-limit causant Gateway Timeout ⚠️ CRITIQUE

@@ -1,5 +1,15 @@
 # Coolify : Déploiement SANS Git
 
+> **⚠️ ATTENTION - DOCUMENTATION OBSOLÈTE**
+>
+> Ce guide contient des méthodes obsolètes et des références à `database.sql` (fichier **SUPPRIMÉ**).
+>
+> **👉 Méthode recommandée:** [DEPLOIEMENT_PRODUCTION.md](../../../DEPLOIEMENT_PRODUCTION.md) (déploiement via Git)
+>
+> Les déploiements sans Git ne sont **PAS recommandés** pour la production.
+
+---
+
 **Guide complet des méthodes de déploiement dans Coolify**
 **Date : 2025-01-15**
 
