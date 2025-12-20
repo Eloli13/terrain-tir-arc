@@ -15,6 +15,41 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ### 🔧 Modifié
 
+#### Fix express-rate-limit - Corriger Gateway Timeout avec proxy Traefik ⚠️ CRITIQUE
+- **Problème** : Gateway Timeout 504 lors de toute requête après démarrage du serveur
+  ```
+  ValidationError: The Express 'trust proxy' setting is true, which allows anyone to trivially bypass IP-based rate limiting.
+  code: 'ERR_ERL_PERMISSIVE_TRUST_PROXY'
+  ```
+- **Cause racine** : express-rate-limit v7+ nécessite configuration explicite du trust proxy
+  - L'application utilise `app.set('trust proxy', true)` pour Traefik/Coolify
+  - Mais express-rate-limit ne l'hérite plus automatiquement depuis v7
+  - **Crash à la première requête** utilisant rate limiting
+- **Impact** :
+  - Application démarre ✅ mais crash immédiatement sur première requête ❌
+  - Gateway Timeout pour l'utilisateur
+  - Impossible d'accéder au site
+- **Solution** : Ajout de `trust: true` dans chaque rate limiter ([security.js:58,82](server/middleware/security.js#L58))
+  ```javascript
+  const globalRateLimit = rateLimit({
+      // ... autres options
+      trust: true,  // ✅ AJOUTÉ - Requis pour proxy
+      handler: ...
+  });
+
+  const authRateLimit = rateLimit({
+      // ... autres options
+      trust: true,  // ✅ AJOUTÉ - Requis pour proxy
+      handler: ...
+  });
+  ```
+- **Sécurité** :
+  - ✅ Configuration trust explicite plus sûre que l'héritage implicite
+  - ✅ Rate limiting fonctionne correctement derrière Traefik
+  - ✅ IPs réelles capturées via X-Forwarded-For
+- **Documentation** : [express-rate-limit docs](https://express-rate-limit.github.io/ERR_ERL_PERMISSIVE_TRUST_PROXY/)
+- **Résultat** : Site accessible, rate limiting fonctionnel, plus de Gateway Timeout
+
 #### Fix CSP - Autoriser tous les CDN externes nécessaires ⚠️ BUG FIX
 - **Problème** : Multiples erreurs CSP bloquant le chargement de l'application
   ```

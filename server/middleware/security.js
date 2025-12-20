@@ -55,7 +55,7 @@ const globalRateLimit = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Trust proxy automatiquement hérité de app.set('trust proxy', true)
+    trust: true, // REQUIS pour express-rate-limit v7+ avec proxy (Traefik/Coolify)
     handler: (req, res) => {
         logger.security('Rate limit dépassé', {
             ip: req.ip,
@@ -79,7 +79,7 @@ const authRateLimit = rateLimit({
         error: 'Trop de tentatives de connexion, veuillez réessayer dans 15 minutes.',
         retryAfter: 15 * 60
     },
-    // Trust proxy automatiquement hérité de app.set('trust proxy', true)
+    trust: true, // REQUIS pour express-rate-limit v7+ avec proxy (Traefik/Coolify)
     handler: (req, res) => {
         logger.security('Tentatives de connexion excessives', {
             ip: req.ip,
