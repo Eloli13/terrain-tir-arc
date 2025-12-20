@@ -15,6 +15,27 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ### 🔧 Modifié
 
+#### Ajout variables base obligatoires pour Coolify (6 → 12 variables) ⚠️ CRITIQUE
+- **Problème découvert en production** : Coolify avec Docker Compose ne passe **PAS automatiquement** les defaults du docker-compose.yaml aux containers
+- **Symptôme** : Gateway Timeout 504 même avec déploiement réussi
+- **Cause** : Variables critiques absentes → application crash au démarrage
+  - `NODE_ENV` manquant → mode développement au lieu de production
+  - `DB_HOST` manquant → tentative connexion à localhost au lieu de postgres
+  - `DB_PORT`, `DB_NAME`, `DB_USER` manquants → échec connexion base de données
+  - `HOST` manquant → binding 127.0.0.1 au lieu de 0.0.0.0 dans Docker
+- **Solution** : Ajout explicite de 6 variables de base dans la configuration Coolify
+  - NODE_ENV=production
+  - DB_HOST=postgres
+  - DB_PORT=5432
+  - DB_NAME=terrain_tir_arc
+  - DB_USER=tir_arc_user
+  - HOST=0.0.0.0
+- **Total** : 12 variables requises (5 secrets + 1 ALLOWED_ORIGINS + 6 base)
+- **Fichiers modifiés** :
+  - [DEPLOIEMENT_PRODUCTION.md](DEPLOIEMENT_PRODUCTION.md) - Section 3.3 mise à jour
+  - [scripts/generate-secrets.js](scripts/generate-secrets.js) - Génère les 12 variables
+- **Impact** : Gateway Timeout résolu, application démarre correctement
+
 #### Simplification drastique des variables d'environnement Coolify ⚠️ IMPORTANT
 - **Problème** : Guide de déploiement demandait TROP de variables (22 variables)
   - Risque de doublons entre Coolify et docker-compose.yaml

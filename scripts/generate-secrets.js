@@ -54,7 +54,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Génération du fichier .env.production.generated
-// ⚠️ IMPORTANT: Ne générer QUE les variables REQUISES (sans defaults dans docker-compose.yaml)
+// ⚠️ IMPORTANT: Coolify ne passe PAS les defaults de docker-compose.yaml aux containers
 const envContent = `# ===================================================================
 # SECRETS GÉNÉRÉS LE ${new Date().toISOString()}
 # ===================================================================
@@ -65,9 +65,6 @@ const envContent = `# ==========================================================
 # ========================================
 # 🔐 SECRETS OBLIGATOIRES
 # ========================================
-# Ces 5 variables n'ont PAS de defaults dans docker-compose.yaml
-# Elles DOIVENT être configurées dans Coolify
-
 DB_PASSWORD=${secrets['DB_PASSWORD']}
 JWT_SECRET=${secrets['JWT_SECRET']}
 JWT_REFRESH_SECRET=${secrets['JWT_REFRESH_SECRET']}
@@ -78,22 +75,27 @@ ENCRYPTION_KEY=${secrets['ENCRYPTION_KEY']}
 # 🌐 CONFIGURATION REQUISE
 # ========================================
 # Remplacer par votre domaine réel
-
 ALLOWED_ORIGINS=https://tiralarc.srv759477.hstgr.cloud
 
 # ========================================
-# ✅ C'EST TOUT !
+# 🔧 CONFIGURATION BASE
 # ========================================
-# Le reste a des valeurs par défaut dans docker-compose.yaml :
-# - NODE_ENV=production (hardcodé)
-# - PORT=3000 (default)
-# - DB_HOST=postgres, DB_PORT=5432, DB_NAME=terrain_tir_arc, DB_USER=tir_arc_user (defaults)
-# - LOG_LEVEL=warn (default)
-# - RATE_LIMIT_WINDOW_MS=900000, RATE_LIMIT_MAX_REQUESTS=100, BCRYPT_ROUNDS=12 (defaults)
-# - SMTP_* vides par défaut (optionnel)
-#
-# ❌ NE PAS ajouter ces variables dans Coolify (risque de doublons)
-# ❌ CORS_ORIGIN et FRONTEND_URL ne sont PAS utilisés dans le code
+# OBLIGATOIRES : Coolify ne passe pas les defaults de docker-compose.yaml
+NODE_ENV=production
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=terrain_tir_arc
+DB_USER=tir_arc_user
+HOST=0.0.0.0
+
+# ========================================
+# ✅ TOTAL : 12 VARIABLES REQUISES
+# ========================================
+# Variables optionnelles (ont des defaults dans docker-compose.yaml) :
+# - PORT=3000 (pas besoin de l'ajouter)
+# - LOG_LEVEL=warn (ajouter uniquement si vous voulez info/debug)
+# - RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS, BCRYPT_ROUNDS (pas besoin)
+# - SMTP_* (ajouter uniquement si vous configurez les emails)
 `;
 
 const outputPath = path.join(__dirname, '..', '.env.production.generated');

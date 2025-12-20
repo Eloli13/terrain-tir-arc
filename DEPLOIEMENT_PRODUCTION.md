@@ -101,7 +101,7 @@ Cela crée `.env.production.generated` avec des secrets de **128 caractères**.
 
 ### 3.3 Variables d'Environnement
 
-Allez dans "Environment Variables" et ajoutez **UNIQUEMENT** ces variables:
+Allez dans "Environment Variables" et ajoutez ces **12 variables** :
 
 ```env
 # 🔐 SECRETS OBLIGATOIRES (générés à l'étape 2)
@@ -113,9 +113,17 @@ ENCRYPTION_KEY=<coller le secret généré - 128 caractères>
 
 # 🌐 CONFIGURATION REQUISE (remplacer par votre domaine)
 ALLOWED_ORIGINS=https://tiralarc.srv759477.hstgr.cloud
+
+# 🔧 CONFIGURATION BASE (OBLIGATOIRES - Coolify ne passe pas les defaults)
+NODE_ENV=production
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=terrain_tir_arc
+DB_USER=tir_arc_user
+HOST=0.0.0.0
 ```
 
-**✅ C'EST TOUT ! Le reste a des valeurs par défaut dans docker-compose.yaml**
+**⚠️ IMPORTANT:** Coolify avec Docker Compose **ne passe PAS automatiquement** les defaults du docker-compose.yaml aux containers. Il faut donc spécifier explicitement ces variables.
 
 ---
 
@@ -135,13 +143,12 @@ SMTP_USER=votre-email@gmail.com
 SMTP_PASSWORD=votre_app_password
 ```
 
-**⚠️ IMPORTANT - NE PAS AJOUTER CES VARIABLES (déjà dans docker-compose.yaml) :**
-- ❌ `NODE_ENV` (hardcodé à "production")
-- ❌ `PORT` (default: 3000)
-- ❌ `HOST` (géré par Docker)
-- ❌ `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` (defaults corrects)
-- ❌ `RATE_LIMIT_*`, `BCRYPT_ROUNDS` (defaults corrects)
-- ❌ `CORS_ORIGIN`, `FRONTEND_URL` (variables inutilisées)
+**⚠️ Variables Optionnelles (ont des defaults) :**
+- `PORT` (default: 3000 dans docker-compose.yaml) - **pas besoin de l'ajouter**
+- `LOG_LEVEL` (default: warn) - ajouter uniquement si vous voulez plus de logs (info/debug)
+- `RATE_LIMIT_*`, `BCRYPT_ROUNDS` (defaults corrects) - **pas besoin de les ajouter**
+- `SMTP_*` (vides par défaut) - ajouter uniquement si vous configurez les emails
+- ❌ `CORS_ORIGIN`, `FRONTEND_URL` (variables inutilisées dans le code) - **NE PAS ajouter**
 
 **⚠️ VÉRIFICATION CRITIQUE:**
 - Chaque secret doit faire **128 caractères**
