@@ -339,25 +339,47 @@ class TirArcApp {
     }
 
     handleQRCode(data) {
-        Logger.debug('QR Code détecté:', data);
+        Logger.info('🔍 QR Code détecté:', data);
+        console.log('🔍 QR Code scanné:', data);
 
         // Vérifier si c'est un QR code valide pour l'application
-        if (this.isValidQRCode(data)) {
+        const isValid = this.isValidQRCode(data);
+        Logger.info('✅ QR Code valide?', isValid);
+        console.log('✅ QR Code valide?', isValid);
+
+        if (isValid) {
             this.showScanResult('QR Code valide ! Redirection...', 'success');
+            Logger.info('➡️ Redirection vers declaration.html dans 1.5s');
+            console.log('➡️ Redirection vers declaration.html dans 1.5s');
             setTimeout(() => {
                 this.goToDeclaration();
             }, 1500);
         } else {
-            this.showScanResult('QR Code non valide pour cette application', 'error');
+            Logger.warn('❌ QR Code non valide:', data);
+            console.warn('❌ QR Code non valide:', data);
+            this.showScanResult(`QR Code non valide: "${data}"`, 'error');
         }
     }
 
     isValidQRCode(data) {
         // Vérifier si le QR code contient l'URL de l'application
-        return data.includes('terrain') || data.includes('tir') ||
-               data.includes(window.location.hostname) ||
-               data === 'TERRAIN_TIR_ARC_ACCESS' ||
-               data.includes('test') || data.includes('TEST'); // Pour les tests
+        const checks = {
+            containsTerrain: data.includes('terrain'),
+            containsTir: data.includes('tir'),
+            containsHostname: data.includes(window.location.hostname),
+            isExactMatch: data === 'TERRAIN_TIR_ARC_ACCESS',
+            isTest: data.includes('test') || data.includes('TEST')
+        };
+
+        Logger.debug('🔎 Validation QR Code:', {
+            data: data,
+            hostname: window.location.hostname,
+            checks: checks
+        });
+        console.log('🔎 Validation QR Code:', checks);
+
+        return checks.containsTerrain || checks.containsTir || checks.containsHostname ||
+               checks.isExactMatch || checks.isTest;
     }
 
     showScanResult(message, type) {
