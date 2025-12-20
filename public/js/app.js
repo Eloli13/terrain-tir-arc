@@ -260,10 +260,21 @@ class TirArcApp {
 
             const scannerVideo = document.getElementById('scanner');
             const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
+            // Optimisation: willReadFrequently améliore les performances getImageData répétés
+            const context = canvas.getContext('2d', { willReadFrequently: true });
 
-            const detectQR = () => {
+            let lastScanTime = 0;
+            const scanInterval = 100; // Scan toutes les 100ms au lieu de chaque frame (60fps → 10fps)
+
+            const detectQR = (timestamp) => {
                 if (!this.isScanning) return;
+
+                // Throttle: ne scanner que toutes les 100ms pour réduire la charge CPU
+                if (timestamp - lastScanTime < scanInterval) {
+                    requestAnimationFrame(detectQR);
+                    return;
+                }
+                lastScanTime = timestamp;
 
                 if (scannerVideo.readyState === scannerVideo.HAVE_ENOUGH_DATA) {
                     canvas.width = scannerVideo.videoWidth;

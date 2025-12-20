@@ -50,7 +50,8 @@ class QRScanner {
     constructor(video) {
         this.video = video;
         this.canvas = document.createElement('canvas');
-        this.context = this.canvas.getContext('2d');
+        // Optimisation: willReadFrequently améliore les performances getImageData répétés
+        this.context = this.canvas.getContext('2d', { willReadFrequently: true });
         this.isScanning = false;
     }
 
@@ -86,11 +87,21 @@ class QRScanner {
 
     scan() {
         return new Promise((resolve) => {
-            const detectFrame = () => {
+            let lastScanTime = 0;
+            const scanInterval = 100; // Scan toutes les 100ms au lieu de chaque frame (60fps → 10fps)
+
+            const detectFrame = (timestamp) => {
                 if (!this.isScanning) {
                     resolve(null);
                     return;
                 }
+
+                // Throttle: ne scanner que toutes les 100ms pour réduire la charge CPU
+                if (timestamp - lastScanTime < scanInterval) {
+                    requestAnimationFrame(detectFrame);
+                    return;
+                }
+                lastScanTime = timestamp;
 
                 if (this.video.readyState === this.video.HAVE_ENOUGH_DATA) {
                     this.canvas.width = this.video.videoWidth;
@@ -121,7 +132,7 @@ class QRScanner {
                 requestAnimationFrame(detectFrame);
             };
 
-            detectFrame();
+            detectFrame(0); // Initialiser avec timestamp = 0
         });
     }
 }
