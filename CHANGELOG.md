@@ -15,6 +15,35 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ### 🔧 Modifié
 
+#### Fix authentification admin - Permettre login avec mot de passe par défaut ⚠️ BUG FIX
+- **Problème** : Login admin avec `changez-moi-en-production` échouait avec erreur "Vous devez changer votre mot de passe par défaut"
+- **Cause racine** : La vérification `must_change_password` **bloquait** le login au lieu de simplement avertir l'utilisateur
+- **Impact utilisateur** : Impossible de se connecter au dashboard admin après le premier déploiement
+- **Solution implémentée** :
+  - ✅ **Backend** ([server/middleware/auth.js:261-309](server/middleware/auth.js#L261-L309)) : Autoriser login même si `must_change_password=true`
+    - Suppression du blocage qui retournait `success: false`
+    - Ajout du flag `mustChangePassword` dans la réponse de login réussie
+    - Logging différencié selon l'état du flag
+  - ✅ **Frontend - Login** ([public/js/app.js:108-120](public/js/app.js#L108-L120)) : Stocker le flag dans localStorage
+    - Si `mustChangePassword=true` → `localStorage.setItem('must_change_password', 'true')`
+    - Permet au dashboard de détecter la situation
+  - ✅ **Frontend - Dashboard** ([public/admin/admin.js:58-152](public/admin/admin.js#L58-L152)) : Bannière d'avertissement visuelle
+    - Bannière rouge persistante en haut de la page
+    - Texte : "🔒 SÉCURITÉ : Vous utilisez le mot de passe par défaut. Veuillez le changer immédiatement"
+    - Bouton "Changer maintenant" → Navigation automatique vers section Paramètres
+    - Animation slide-down pour attirer l'attention
+  - ✅ **Frontend - Changement MDP** ([public/admin/admin.js:1334-1349](public/admin/admin.js#L1334-L1349)) : Suppression automatique
+    - Après changement réussi : `localStorage.removeItem('must_change_password')`
+    - Suppression de la bannière d'avertissement
+    - Message de succès : "✅ Mot de passe modifié avec succès ! Votre compte est maintenant sécurisé."
+- **Sécurité** :
+  - ✅ Le flag `must_change_password` reste dans la base de données jusqu'au changement effectif
+  - ✅ La bannière réapparaît à chaque login tant que le mot de passe n'est pas changé
+  - ✅ Aucune dégradation de sécurité - juste amélioration de l'UX
+- **Documentation mise à jour** :
+  - [DEPLOIEMENT_PRODUCTION.md](DEPLOIEMENT_PRODUCTION.md#L215-L228) - Section "Premier Login" explique la bannière
+- **Résultat** : Login admin fonctionne immédiatement après déploiement, avec guidage visuel pour changer le mot de passe
+
 #### Ajout variables base obligatoires pour Coolify (6 → 12 variables) ⚠️ CRITIQUE
 - **Problème découvert en production** : Coolify avec Docker Compose ne passe **PAS automatiquement** les defaults du docker-compose.yaml aux containers
 - **Symptôme** : Gateway Timeout 504 même avec déploiement réussi

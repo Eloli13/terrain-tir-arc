@@ -258,22 +258,6 @@ class AuthManager {
                 };
             }
 
-            // Vérifier si l'utilisateur doit changer son mot de passe
-            if (user.must_change_password) {
-                logger.security('Connexion avec mot de passe à changer', {
-                    userId: user.id,
-                    username: user.username,
-                    ip: req.ip
-                });
-
-                return {
-                    success: false,
-                    error: 'Vous devez changer votre mot de passe par défaut',
-                    mustChangePassword: true,
-                    userId: user.id
-                };
-            }
-
             // Connexion réussie - réinitialiser le compteur
             await database.query(`
                 UPDATE admin_users
@@ -294,12 +278,23 @@ class AuthManager {
             // Stocker le refresh token
             await this.storeRefreshToken(user.id, refreshToken);
 
-            logger.security('Connexion réussie', {
-                userId: user.id,
-                username: user.username,
-                ip: req.ip,
-                userAgent: req.get('User-Agent')
-            });
+            // Logger avec information sur must_change_password
+            if (user.must_change_password) {
+                logger.security('Connexion réussie avec mot de passe à changer', {
+                    userId: user.id,
+                    username: user.username,
+                    mustChangePassword: true,
+                    ip: req.ip,
+                    userAgent: req.get('User-Agent')
+                });
+            } else {
+                logger.security('Connexion réussie', {
+                    userId: user.id,
+                    username: user.username,
+                    ip: req.ip,
+                    userAgent: req.get('User-Agent')
+                });
+            }
 
             return {
                 success: true,
@@ -309,7 +304,8 @@ class AuthManager {
                     email: user.email
                 },
                 accessToken,
-                refreshToken
+                refreshToken,
+                mustChangePassword: user.must_change_password || false
             };
 
         } catch (error) {

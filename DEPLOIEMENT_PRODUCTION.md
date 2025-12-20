@@ -216,9 +216,15 @@ docker exec -it <container_app_name> node server/scripts/init-db.js
 
 ### 6.1 Premier Login
 
-1. Allez sur `https://votre-domaine.com/admin.html`
-2. Connectez-vous avec les credentials par défaut
-3. **IMPORTANT:** Changez immédiatement le mot de passe admin
+1. Allez sur `https://votre-domaine.com/` (page d'accueil)
+2. Cliquez sur le bouton "Admin" en haut à droite
+3. Connectez-vous avec les credentials par défaut :
+   - Username: `admin`
+   - Password: `changez-moi-en-production`
+4. **IMPORTANT :** Vous verrez une bannière rouge en haut de la page indiquant que vous devez changer votre mot de passe
+5. Cliquez sur "Changer maintenant" dans la bannière OU allez dans "Paramètres"
+6. Changez immédiatement le mot de passe pour sécuriser votre compte
+7. La bannière disparaîtra automatiquement après le changement réussi
 
 ### 6.2 Configuration SMTP (Optionnel)
 

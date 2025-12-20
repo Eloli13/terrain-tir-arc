@@ -25,6 +25,9 @@ class AdminApp {
             return;
         }
 
+        // Vérifier si le mot de passe doit être changé
+        this.checkPasswordChangeRequired();
+
         await this.loadDashboard();
         this.setupNavigation();
         this.setupEventListeners();
@@ -50,6 +53,102 @@ class AdminApp {
     redirectToLogin() {
         // Rediriger vers la page principale sans message
         window.location.href = '../index.html';
+    }
+
+    checkPasswordChangeRequired() {
+        // Vérifier si le mot de passe doit être changé
+        const mustChangePassword = localStorage.getItem('must_change_password');
+
+        if (mustChangePassword === 'true') {
+            this.showPasswordChangeWarning();
+        }
+    }
+
+    showPasswordChangeWarning() {
+        // Créer une bannière d'avertissement persistante
+        const warningBanner = document.createElement('div');
+        warningBanner.id = 'password-change-warning';
+        warningBanner.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            padding: 16px 24px;
+            text-align: center;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            animation: slideDown 0.3s ease-out;
+        `;
+
+        warningBanner.innerHTML = `
+            <span style="font-size: 1.1em;">
+                🔒 <strong>SÉCURITÉ :</strong> Vous utilisez le mot de passe par défaut.
+                Veuillez le changer immédiatement pour sécuriser votre compte.
+            </span>
+            <button id="changePasswordBtn" style="
+                background: white;
+                color: #FF6B6B;
+                border: none;
+                padding: 8px 20px;
+                border-radius: 6px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            ">
+                Changer maintenant
+            </button>
+        `;
+
+        // Ajouter l'animation CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from {
+                    transform: translateY(-100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+            #changePasswordBtn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Ajouter la bannière au début du body
+        document.body.insertBefore(warningBanner, document.body.firstChild);
+
+        // Ajuster le padding du contenu principal pour ne pas être caché par la bannière
+        document.body.style.paddingTop = '70px';
+
+        // Gérer le clic sur le bouton "Changer maintenant"
+        document.getElementById('changePasswordBtn').addEventListener('click', () => {
+            // Naviguer vers la section paramètres
+            this.showSection('parametres');
+            // Synchroniser l'état actif
+            this.syncActiveStates('parametres');
+            // Scroll vers le formulaire de changement de mot de passe
+            setTimeout(() => {
+                const passwordSection = document.querySelector('#parametres');
+                if (passwordSection) {
+                    passwordSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        });
+
+        Logger.warn('⚠️ Bannière de changement de mot de passe affichée');
     }
 
     setupLogout() {
@@ -1232,9 +1331,21 @@ class AdminApp {
                         })
                     });
 
+                    // Supprimer le flag must_change_password
+                    localStorage.removeItem('must_change_password');
+
+                    // Supprimer la bannière d'avertissement si elle existe
+                    const warningBanner = document.getElementById('password-change-warning');
+                    if (warningBanner) {
+                        warningBanner.remove();
+                        document.body.style.paddingTop = '0';
+                    }
+
                     // Effacer le formulaire
                     document.getElementById('passwordChangeForm').reset();
-                    this.showPasswordMessage('Mot de passe modifié avec succès', 'alert-success');
+                    this.showPasswordMessage('✅ Mot de passe modifié avec succès ! Votre compte est maintenant sécurisé.', 'alert-success');
+
+                    Logger.info('✅ Mot de passe changé - flag must_change_password supprimé');
                     return;
 
                 } catch (apiError) {

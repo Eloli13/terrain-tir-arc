@@ -106,6 +106,14 @@ class TirArcApp {
                     const loginResult = await DatabaseManager.login('admin', password);
 
                     if (loginResult && loginResult.accessToken) {
+                        // Stocker le flag must_change_password si présent
+                        if (loginResult.mustChangePassword) {
+                            localStorage.setItem('must_change_password', 'true');
+                            Logger.warn('⚠️ Mot de passe par défaut détecté - changement requis');
+                        } else {
+                            localStorage.removeItem('must_change_password');
+                        }
+
                         // Connexion réussie, rediriger vers la page admin
                         window.location.href = 'admin/index.html';
                         return;
