@@ -42,6 +42,7 @@ nul
 .idea/
 *.sublime-project
 *.sublime-workspace
+.claude/  # Configuration locale Claude Code (peut contenir des tokens)
 
 # Build et cache
 dist/
