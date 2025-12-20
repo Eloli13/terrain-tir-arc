@@ -101,52 +101,51 @@ Cela crée `.env.production.generated` avec des secrets de **128 caractères**.
 
 ### 3.3 Variables d'Environnement
 
-Allez dans "Environment Variables" et ajoutez **TOUTES** ces variables:
+Allez dans "Environment Variables" et ajoutez **UNIQUEMENT** ces variables:
 
 ```env
-# Base de données
-DB_HOST=postgres
-DB_PORT=5432
-DB_NAME=terrain_tir_arc
-DB_USER=tir_arc_user
+# 🔐 SECRETS OBLIGATOIRES (générés à l'étape 2)
 DB_PASSWORD=<coller le secret généré - 128 caractères>
-
-# JWT & Sessions
 JWT_SECRET=<coller le secret généré - 128 caractères>
 JWT_REFRESH_SECRET=<coller le secret généré - 128 caractères>
 SESSION_SECRET=<coller le secret généré - 128 caractères>
-
-# Chiffrement
 ENCRYPTION_KEY=<coller le secret généré - 128 caractères>
 
-# Configuration réseau
-ALLOWED_ORIGINS=https://votre-domaine.com
-CORS_ORIGIN=https://votre-domaine.com
-FRONTEND_URL=https://votre-domaine.com
-
-# Application
-NODE_ENV=production
-PORT=3000
-HOST=0.0.0.0
-LOG_LEVEL=info
-
-# Sécurité
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-BCRYPT_ROUNDS=12
-
-# SMTP (optionnel - laisser vide si non configuré)
-SMTP_HOST=
-SMTP_PORT=
-SMTP_SECURE=
-SMTP_USER=
-SMTP_PASSWORD=
+# 🌐 CONFIGURATION REQUISE (remplacer par votre domaine)
+ALLOWED_ORIGINS=https://tiralarc.srv759477.hstgr.cloud
 ```
+
+**✅ C'EST TOUT ! Le reste a des valeurs par défaut dans docker-compose.yaml**
+
+---
+
+### 3.4 Variables Optionnelles (si besoin de personnalisation)
+
+Ces variables ont déjà des valeurs par défaut correctes. N'ajoutez que si vous voulez les modifier :
+
+```env
+# Application (defaults: production, 3000, warn)
+LOG_LEVEL=info              # Pour plus de logs (default: warn)
+
+# SMTP - Configuration email (default: vide = pas d'emails)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=votre-email@gmail.com
+SMTP_PASSWORD=votre_app_password
+```
+
+**⚠️ IMPORTANT - NE PAS AJOUTER CES VARIABLES (déjà dans docker-compose.yaml) :**
+- ❌ `NODE_ENV` (hardcodé à "production")
+- ❌ `PORT` (default: 3000)
+- ❌ `HOST` (géré par Docker)
+- ❌ `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` (defaults corrects)
+- ❌ `RATE_LIMIT_*`, `BCRYPT_ROUNDS` (defaults corrects)
+- ❌ `CORS_ORIGIN`, `FRONTEND_URL` (variables inutilisées)
 
 **⚠️ VÉRIFICATION CRITIQUE:**
 - Chaque secret doit faire **128 caractères**
-- `DB_PASSWORD` doit être identique dans les deux services (postgres ET app)
-- Les URLs doivent correspondre à votre domaine réel
+- `ALLOWED_ORIGINS` doit correspondre à votre domaine réel
 
 ---
 

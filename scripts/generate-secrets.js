@@ -54,76 +54,46 @@ const fs = require('fs');
 const path = require('path');
 
 // Génération du fichier .env.production.generated
-// ⚠️ IMPORTANT: Ne générer QUE les variables utilisées dans docker-compose.coolify.yml
+// ⚠️ IMPORTANT: Ne générer QUE les variables REQUISES (sans defaults dans docker-compose.yaml)
 const envContent = `# ===================================================================
 # SECRETS GÉNÉRÉS LE ${new Date().toISOString()}
 # ===================================================================
 # ⚠️  NE JAMAIS COMMITER CE FICHIER DANS GIT !
-# ⚠️  Ces variables sont utilisées par docker-compose.coolify.yml
+# ⚠️  À copier dans Coolify > Environment Variables
 # ===================================================================
 
 # ========================================
-# ENVIRONNEMENT
+# 🔐 SECRETS OBLIGATOIRES
 # ========================================
-NODE_ENV=production
-PORT=3000
-HOST=0.0.0.0
+# Ces 5 variables n'ont PAS de defaults dans docker-compose.yaml
+# Elles DOIVENT être configurées dans Coolify
 
-# ========================================
-# BASE DE DONNÉES POSTGRESQL
-# ========================================
-DB_HOST=postgres
-DB_PORT=5432
-DB_NAME=terrain_tir_arc
-DB_USER=tir_arc_user
 DB_PASSWORD=${secrets['DB_PASSWORD']}
-
-# ========================================
-# SÉCURITÉ JWT
-# ========================================
 JWT_SECRET=${secrets['JWT_SECRET']}
 JWT_REFRESH_SECRET=${secrets['JWT_REFRESH_SECRET']}
-
-# ========================================
-# SESSION ET ENCRYPTION
-# ========================================
 SESSION_SECRET=${secrets['SESSION_SECRET']}
 ENCRYPTION_KEY=${secrets['ENCRYPTION_KEY']}
 
 # ========================================
-# CORS
+# 🌐 CONFIGURATION REQUISE
 # ========================================
+# Remplacer par votre domaine réel
+
 ALLOWED_ORIGINS=https://tiralarc.srv759477.hstgr.cloud
-CORS_ORIGIN=https://tiralarc.srv759477.hstgr.cloud
-FRONTEND_URL=https://tiralarc.srv759477.hstgr.cloud
 
 # ========================================
-# LOGS
+# ✅ C'EST TOUT !
 # ========================================
-LOG_LEVEL=info
-
-# ========================================
-# RATE LIMITING
-# ========================================
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-BCRYPT_ROUNDS=12
-
-# ========================================
-# EMAIL (OPTIONNEL - laisser vide pour l'instant)
-# ========================================
-SMTP_HOST=
-SMTP_PORT=
-SMTP_SECURE=
-SMTP_USER=
-SMTP_PASSWORD=
-
-# ========================================
-# NOTES
-# ========================================
-# BACKUP_RETENTION_DAYS: Configuré à 30 jours dans docker-compose.coolify.yml (ligne 109)
-# Le backup s'exécute automatiquement tous les jours à 2h du matin
-# Les backups sont conservés dans le volume app_backups_prod
+# Le reste a des valeurs par défaut dans docker-compose.yaml :
+# - NODE_ENV=production (hardcodé)
+# - PORT=3000 (default)
+# - DB_HOST=postgres, DB_PORT=5432, DB_NAME=terrain_tir_arc, DB_USER=tir_arc_user (defaults)
+# - LOG_LEVEL=warn (default)
+# - RATE_LIMIT_WINDOW_MS=900000, RATE_LIMIT_MAX_REQUESTS=100, BCRYPT_ROUNDS=12 (defaults)
+# - SMTP_* vides par défaut (optionnel)
+#
+# ❌ NE PAS ajouter ces variables dans Coolify (risque de doublons)
+# ❌ CORS_ORIGIN et FRONTEND_URL ne sont PAS utilisés dans le code
 `;
 
 const outputPath = path.join(__dirname, '..', '.env.production.generated');

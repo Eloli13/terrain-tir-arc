@@ -13,6 +13,23 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 - Internationalisation (i18n)
 - Interface admin pour gestion des utilisateurs
 
+### 🔧 Modifié
+
+#### Simplification drastique des variables d'environnement Coolify ⚠️ IMPORTANT
+- **Problème** : Guide de déploiement demandait TROP de variables (22 variables)
+  - Risque de doublons entre Coolify et docker-compose.yaml
+  - Variables inutilisées (CORS_ORIGIN, FRONTEND_URL)
+  - Variables avec defaults déjà corrects dans docker-compose
+  - Complexité inutile pour l'utilisateur
+- **Solution** : Réduction à **6 variables SEULEMENT**
+  - **5 secrets obligatoires** : DB_PASSWORD, JWT_SECRET, JWT_REFRESH_SECRET, SESSION_SECRET, ENCRYPTION_KEY
+  - **1 config requise** : ALLOWED_ORIGINS (car default générique ne marche pas)
+  - Tout le reste utilise les defaults de docker-compose.yaml
+- **Fichiers modifiés** :
+  - [DEPLOIEMENT_PRODUCTION.md](DEPLOIEMENT_PRODUCTION.md#L102-L148) - Liste réduite de 22 → 6 variables
+  - [scripts/generate-secrets.js](scripts/generate-secrets.js#L58-L96) - Génération simplifiée
+  - Suppression CORS_ORIGIN et FRONTEND_URL (non utilisés dans le code)
+
 ---
 
 ## [1.0.5] - 2025-12-20
