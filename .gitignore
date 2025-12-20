@@ -74,3 +74,4 @@ coverage/
 /dump*.sql
 
 .env.*.local
+code messagerie test.odt
