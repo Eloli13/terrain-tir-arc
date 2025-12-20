@@ -337,18 +337,27 @@ async function initializeApp() {
         // Initialiser WebSocket
         websocketServer.initialize(server);
 
-        // Démarrage du serveur
-        server.listen(PORT, HOST, () => {
-            logger.info(`Serveur démarré sur ${HOST}:${PORT}`, {
-                environment: process.env.NODE_ENV || 'development',
-                host: HOST,
-                port: PORT,
-                cors: process.env.ALLOWED_ORIGINS || 'Non configuré'
-            });
+        // Démarrage du serveur (wrapper en Promise pour attendre vraiment)
+        await new Promise((resolve, reject) => {
+            server.listen(PORT, HOST, (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    logger.info(`Serveur démarré sur ${HOST}:${PORT}`, {
+                        environment: process.env.NODE_ENV || 'development',
+                        host: HOST,
+                        port: PORT,
+                        cors: process.env.ALLOWED_ORIGINS || 'Non configuré'
+                    });
 
-            logger.security('Serveur démarré avec WebSocket', {
-                port: PORT,
-                environment: process.env.NODE_ENV || 'development'
+                    logger.security('Serveur démarré avec WebSocket', {
+                        port: PORT,
+                        environment: process.env.NODE_ENV || 'development'
+                    });
+
+                    console.log(`✅ Server is listening on ${HOST}:${PORT}`);
+                    resolve();
+                }
             });
         });
 
