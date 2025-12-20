@@ -28,7 +28,11 @@ const helmetConfig = {
                 (req, res) => `'nonce-${res.locals.cspNonce}'`
             ],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'"],
+            connectSrc: [
+                "'self'",
+                "https://cdn.jsdelivr.net",  // CDN pour jsQR, Chart.js, QRCode
+                "https://cdnjs.cloudflare.com"  // CDN pour jsPDF
+            ],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],

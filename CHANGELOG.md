@@ -15,6 +15,35 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ### 🔧 Modifié
 
+#### Fix CSP - Autoriser Service Worker à charger ressources CDN ⚠️ BUG FIX
+- **Problème** : Erreurs CSP dans la console navigateur lors du chargement de l'application
+  ```
+  sw.js:181 Connecting to 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js' violates CSP
+  Fetch API cannot load https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js
+  Failed to convert value to 'Response'
+  ```
+- **Cause racine** : Configuration CSP incomplète dans [security.js](server/middleware/security.js)
+  - `scriptSrc` autorisait `cdn.jsdelivr.net` pour charger les scripts ✅
+  - Mais `connectSrc: ["'self'"]` bloquait les connexions réseau vers les CDN ❌
+  - Le Service Worker utilise `fetch()` pour mettre en cache → nécessite autorisation dans `connectSrc`
+- **Impact** :
+  - Scanner QR code (jsQR) ne se chargeait pas dans le Service Worker
+  - Chart.js, QRCode, jsPDF potentiellement bloqués aussi
+  - Erreurs console polluant les logs navigateur
+- **Solution** : Ajout des CDN externes à `connectSrc` ([security.js:31-35](server/middleware/security.js#L31-L35))
+  ```javascript
+  connectSrc: [
+      "'self'",
+      "https://cdn.jsdelivr.net",      // jsQR, Chart.js, QRCode
+      "https://cdnjs.cloudflare.com"   // jsPDF
+  ]
+  ```
+- **Sécurité** :
+  - ✅ Autorisation limitée aux CDN strictement nécessaires (jsdelivr.net, cdnjs.cloudflare.com)
+  - ✅ Pas d'autorisation globale (`*`) - principe du moindre privilège respecté
+  - ✅ Service Worker peut maintenant mettre en cache les ressources externes
+- **Résultat** : Plus d'erreurs CSP, ressources CDN chargées correctement par le Service Worker
+
 #### Fix authentification admin - Permettre login avec mot de passe par défaut ⚠️ BUG FIX
 - **Problème** : Login admin avec `changez-moi-en-production` échouait avec erreur "Vous devez changer votre mot de passe par défaut"
 - **Cause racine** : La vérification `must_change_password` **bloquait** le login au lieu de simplement avertir l'utilisateur
