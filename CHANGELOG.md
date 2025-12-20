@@ -15,34 +15,47 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ### 🔧 Modifié
 
-#### Fix CSP - Autoriser Service Worker à charger ressources CDN ⚠️ BUG FIX
-- **Problème** : Erreurs CSP dans la console navigateur lors du chargement de l'application
+#### Fix CSP - Autoriser tous les CDN externes nécessaires ⚠️ BUG FIX
+- **Problème** : Multiples erreurs CSP bloquant le chargement de l'application
   ```
-  sw.js:181 Connecting to 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js' violates CSP
-  Fetch API cannot load https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js
-  Failed to convert value to 'Response'
+  Loading 'https://cdn.socket.io/4.8.1/socket.io.min.js' violates CSP
+  Loading 'https://cdnjs.cloudflare.com/.../qrcode.min.js' violates CSP
+  Loading 'https://cdnjs.cloudflare.com/.../jspdf.umd.min.js' violates CSP
+  Loading 'https://cdnjs.cloudflare.com/.../xlsx.full.min.js' violates CSP
+  Loading 'data:audio/wav;base64,...' violates CSP (media-src)
   ```
 - **Cause racine** : Configuration CSP incomplète dans [security.js](server/middleware/security.js)
-  - `scriptSrc` autorisait `cdn.jsdelivr.net` pour charger les scripts ✅
-  - Mais `connectSrc: ["'self'"]` bloquait les connexions réseau vers les CDN ❌
-  - Le Service Worker utilise `fetch()` pour mettre en cache → nécessite autorisation dans `connectSrc`
+  - `scriptSrc` n'autorisait que `cdn.jsdelivr.net` ❌
+  - Manquait `cdn.socket.io` et `cdnjs.cloudflare.com` pour charger les scripts
+  - `mediaSrc` n'autorisait pas `data:` pour les sons notification inline (base64)
+  - Service Worker bloqué par `connectSrc` (corrigé précédemment)
 - **Impact** :
-  - Scanner QR code (jsQR) ne se chargeait pas dans le Service Worker
-  - Chart.js, QRCode, jsPDF potentiellement bloqués aussi
+  - Socket.io (WebSocket temps réel) non chargé → notifications désactivées
+  - QRCode, jsPDF, XLSX non chargés → fonctionnalités export/import cassées
+  - Sons de notification bloqués → pas de feedback audio
   - Erreurs console polluant les logs navigateur
-- **Solution** : Ajout des CDN externes à `connectSrc` ([security.js:31-35](server/middleware/security.js#L31-L35))
+- **Solution** : Autorisation complète des CDN nécessaires ([security.js:25-41](server/middleware/security.js#L25-L41))
   ```javascript
+  scriptSrc: [
+      "'self'",
+      "https://cdn.jsdelivr.net",       // jsQR, Chart.js
+      "https://cdn.socket.io",          // Socket.io
+      "https://cdnjs.cloudflare.com",   // jsPDF, QRCode, XLSX
+      (req, res) => `'nonce-${res.locals.cspNonce}'`
+  ],
   connectSrc: [
       "'self'",
-      "https://cdn.jsdelivr.net",      // jsQR, Chart.js, QRCode
-      "https://cdnjs.cloudflare.com"   // jsPDF
-  ]
+      "https://cdn.jsdelivr.net",       // Service Worker cache
+      "https://cdn.socket.io",          // WebSocket connexion
+      "https://cdnjs.cloudflare.com"    // Service Worker cache
+  ],
+  mediaSrc: ["'self'", "data:"]  // Sons notification base64
   ```
 - **Sécurité** :
-  - ✅ Autorisation limitée aux CDN strictement nécessaires (jsdelivr.net, cdnjs.cloudflare.com)
+  - ✅ Autorisation limitée aux 3 CDN strictement nécessaires
   - ✅ Pas d'autorisation globale (`*`) - principe du moindre privilège respecté
-  - ✅ Service Worker peut maintenant mettre en cache les ressources externes
-- **Résultat** : Plus d'erreurs CSP, ressources CDN chargées correctement par le Service Worker
+  - ✅ Nonces préservés pour scripts inline sécurisés
+- **Résultat** : Plus d'erreurs CSP, toutes les fonctionnalités opérationnelles (WebSocket, export PDF/Excel, QR codes, notifications audio)
 
 #### Fix authentification admin - Permettre login avec mot de passe par défaut ⚠️ BUG FIX
 - **Problème** : Login admin avec `changez-moi-en-production` échouait avec erreur "Vous devez changer votre mot de passe par défaut"
